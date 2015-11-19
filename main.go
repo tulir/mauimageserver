@@ -1,60 +1,68 @@
 package main
 
 import (
-	"bufio"
+	/*"bufio"
+	"log"*/
+	flag "github.com/ogier/pflag"
 	"image/png"
-	"log"
 	"math/rand"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
 func main() {
-	ln, _ := net.Listen("tcp", ":29300")
+	dirPtr := flag.StringP("directory", "d", "./", "The directory path the images should be saved to.")
+	ipPtr := flag.StringP("ip-address", "a", "", "The IP MIS2 should bind to")
+	portPtr := flag.IntP("port", "p", 29300, "The port MIS2 should bind to")
+
+	flag.Parse()
+
+	if !strings.HasSuffix(*dirPtr, "/") {
+		*dirPtr = *dirPtr + "/"
+	}
+
+	ln, _ := net.Listen("tcp", *ipPtr+":"+strconv.Itoa(*portPtr))
 	conn, _ := ln.Accept()
 
-	for {
-		reader := bufio.NewReader(conn)
-		message, _ := reader.ReadString('\n')
-		log.Println("Message Received:", string(message))
+	/*reader := bufio.NewReader(conn)
+	message, _ := reader.ReadString('\n')
+	log.Println("Message Received:", string(message))
 
-		conn.Write([]byte("thing"))
+	conn.Write([]byte("thing"))*/
 
-		lenRune, _, err := reader.ReadRune()
-		len := int32(lenRune)
-        data := [len]byte
-
-		f, err := os.Create("/var/www/image/" + imageName() + ".png")
-		if err != nil {
-			panic(err)
-		}
-		err = png.Encode(f, img)
-		if err != nil {
-			panic(err)
-		}
-		f.Close()
+	image, err := png.Decode(conn)
+	conn.Close()
+	f, err := os.Create(*dirPtr + imageName() + ".png")
+	if err != nil {
+		panic(err)
 	}
+	err = png.Encode(f, image)
+	if err != nil {
+		panic(err)
+	}
+	f.Close()
 }
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
+const allowedCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
 const (
-	letterIdxBits = 6                    // 6 bits to represent a letter index
-	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
-	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+	letterIdxBits = 6
+	letterIdxMask = 1<<letterIdxBits - 1
+	letterIdxMax  = 63 / letterIdxBits
 )
 
 var src = rand.NewSource(time.Now().UnixNano())
 
 func imageName() string {
 	b := make([]byte, 5)
-	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
 	for i, cache, remain := 4, src.Int63(), letterIdxMax; i >= 0; {
 		if remain == 0 {
 			cache, remain = src.Int63(), letterIdxMax
 		}
-		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
-			b[i] = letterBytes[idx]
+		if idx := int(cache & letterIdxMask); idx < len(allowedCharacters) {
+			b[i] = allowedCharacters[idx]
 			i--
 		}
 		cache >>= letterIdxBits
