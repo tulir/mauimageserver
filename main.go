@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	flag "github.com/ogier/pflag"
 	"image/png"
 	"log"
@@ -13,13 +14,13 @@ import (
 	"time"
 )
 
-var dirPtr = flag.StringP("directory", "d", "./", "The directory path the images should be saved to.")
+var dirPtr = flag.StringP("directory", "d", "./%s", "The directory path the images should be saved to. %s is replaced by the file name.")
+var addrPtr = flag.StringP("image-address", "i", "http://localhost/%s", "The address where the images are available online. %s is replaced by the file name.")
 var pwdPtr = flag.StringP("password", "w", "maumau", "The MIS2 password")
 var ipPtr = flag.StringP("ip-address", "a", "", "The IP MIS2 should bind to")
 var portPtr = flag.IntP("port", "p", 29300, "The port MIS2 should bind to")
 
 func main() {
-
 	flag.Parse()
 
 	if !strings.HasSuffix(*dirPtr, "/") {
@@ -40,19 +41,20 @@ func handleConnection(conn net.Conn, pwd string) {
 
 	if message != pwd {
 		log.Println(conn.RemoteAddr().String() + " failed authentication (" + message + ")")
-		conn.Write([]byte{100})
+		conn.Write([]byte("false"))
 		conn.Close()
 		return
 	}
-	conn.Write([]byte{101})
+	conn.Write([]byte("true"))
 
 	name := imageName() + ".png"
 	image, err := png.Decode(conn)
 	if err != nil {
 		panic(err)
 	}
+	conn.Write([]byte(fmt.Sprintf(*addrPtr, name)))
 	conn.Close()
-	f, err := os.Create(*dirPtr + name)
+	f, err := os.Create(fmt.Sprintf(*dirPtr, name))
 	if err != nil {
 		panic(err)
 	}
