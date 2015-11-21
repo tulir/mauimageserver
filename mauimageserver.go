@@ -22,10 +22,6 @@ var portPtr = flag.IntP("port", "p", 29300, "The port MIS2 should bind to")
 
 func main() {
 	flag.Parse()
-
-	if !strings.HasSuffix(*dirPtr, "/") {
-		*dirPtr = *dirPtr + "/"
-	}
 	ln, _ := net.Listen("tcp", *ipPtr+":"+strconv.Itoa(*portPtr))
 
 	for {
@@ -36,23 +32,24 @@ func main() {
 
 func handleConnection(conn net.Conn, pwd string) {
 	reader := bufio.NewReader(conn)
-	message, _ := reader.ReadString('|')
+	message, _ := reader.ReadString('\n')
 	message = strings.TrimSpace(message)
 
 	if message != pwd {
 		log.Println(conn.RemoteAddr().String() + " failed authentication (" + message + ")")
-		conn.Write([]byte("false"))
+		conn.Write([]byte("false\n"))
 		conn.Close()
 		return
 	}
-	conn.Write([]byte("true"))
+
+	conn.Write([]byte("true\n"))
 
 	name := imageName() + ".png"
 	image, err := png.Decode(conn)
 	if err != nil {
 		panic(err)
 	}
-	conn.Write([]byte(fmt.Sprintf(*addrPtr, name)))
+	conn.Write([]byte(fmt.Sprintf(*addrPtr, name) + "\n"))
 	conn.Close()
 	f, err := os.Create(fmt.Sprintf(*dirPtr, name))
 	if err != nil {
