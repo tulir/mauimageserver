@@ -1,36 +1,65 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	flag "github.com/ogier/pflag"
-	"image/png"
-	"log"
-	"math/rand"
-	"net"
+	"maunium.net/go/mauimageserver/data"
+	log "maunium.net/go/maulogger"
+	"net/http"
 	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
-var dirPtr = flag.StringP("directory", "d", "./%s", "The directory path the images should be saved to. %s is replaced by the file name.")
-var addrPtr = flag.StringP("image-address", "i", "http://localhost/%s", "The address where the images are available online. %s is replaced by the file name.")
-var pwdPtr = flag.StringP("password", "w", "maumau", "The MIS2 password")
-var ipPtr = flag.StringP("ip-address", "a", "", "The IP MIS2 should bind to")
-var portPtr = flag.IntP("port", "p", 29300, "The port MIS2 should bind to")
+var debug = flag.Bool("d", false, "Enable to print debug messages to stdout")
+var confPath = flag.StringP("config", "c", "./config.json", "The path of the mauImageServer configuration file.")
+
+var config *data.Configuration
 
 func main() {
 	flag.Parse()
-	ln, _ := net.Listen("tcp", *ipPtr+":"+strconv.Itoa(*portPtr))
 
-	for {
-		conn, _ := ln.Accept()
-		go handleConnection(conn, *pwdPtr)
-	}
+	// Configure the logger
+	log.PrintDebug = *debug
+	log.Fileformat = func(date string, i int) string { return fmt.Sprintf("logs/%[1]s-%02[2]d.log", date, i) }
+	// Initialize the logger
+	log.Init()
+
+	log.Infof("Initializing mauImageServer")
+	loadConfig()
+	loadDatabase()
+
+	http.HandleFunc("/login", login)
+	http.HandleFunc("/register", register)
+	http.HandleFunc("/insert", insert)
+	http.HandleFunc("/delete", delete)
+	http.HandleFunc("/", get)
+	log.Infof("Listening on %s:%d", config.IP, config.Port)
 }
 
-func handleConnection(conn net.Conn, pwd string) {
+func loadConfig() {
+	log.Infoln("Loading config...")
+	var err error
+	config, err = data.LoadConfig(*confPath)
+	if err != nil {
+		log.Fatalf("Failed to load config: %[1]s", err)
+		os.Exit(1)
+	}
+	log.Debugln("Successfully loaded config.")
+}
+
+func loadDatabase() {
+	log.Infoln("Loading database...")
+
+	var err error
+	err = data.LoadDatabase(config.SQL)
+	if err != nil {
+		log.Fatalf("Failed to load database: %[1]s", err)
+		os.Exit(2)
+	}
+
+	log.Debugln("Successfully loaded database.")
+}
+
+/*func handleConnection(conn net.Conn, pwd string) {
 	reader := bufio.NewReader(conn)
 	message, _ := reader.ReadString('\n')
 	message = strings.TrimSpace(message)
@@ -87,4 +116,4 @@ func imageName() string {
 	}
 
 	return string(b)
-}
+}*/
