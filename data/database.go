@@ -27,11 +27,57 @@ func LoadDatabase(conf SQLConfig) error {
 	if err != nil {
 		return err
 	}
-	_, err = database.Query("CREATE TABLE IF NOT EXISTS images (path VARCHAR(255), name VARCHAR(32) NOT NULL, adder VARCHAR(16));")
+	_, err = database.Query("CREATE TABLE IF NOT EXISTS images (name VARCHAR(32) PRIMARY KEY, path VARCHAR(255) NOT NULL, adder VARCHAR(16), adderip VARCHAR(64));")
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+// InsertResult tells the result of inserting an image.
+type InsertResult int
+
+// Errored ...
+const Errored InsertResult = -2
+
+// AlreadyExists ...
+const AlreadyExists InsertResult = -1
+
+// Inserted ...
+const Inserted InsertResult = 1
+
+// Replaced ...
+const Replaced InsertResult = 2
+
+// Insert inserts the given name->path mapping and marks it owned by the given username.
+func Insert(path, name, adder, adderip string) (InsertResult, string) {
+	var oldPath = ""
+	result, err := database.Query("SELECT adder, path FROM images WHERE name=?", name)
+	if err == nil {
+		for result.Next() {
+			if result.Err() != nil {
+				break
+			}
+			var adder2, path2 string
+			result.Scan(&adder2, &path2)
+			if adder2 != adder || adder == "anonymous" {
+				return AlreadyExists, adder2
+			}
+			oldPath = path2
+		}
+	}
+	if len(oldPath) != 0 {
+		_, err = database.Query("UPDATE images SET path=?,adderip=? WHERE name=?;", path, adderip, name)
+		if err != nil {
+			return Errored, err.Error()
+		}
+		return Replaced, oldPath
+	}
+	_, err = database.Query("INSERT INTO images VALUES(?, ?, ?, ?);", name, path, adder, adderip)
+	if err != nil {
+		return Errored, err.Error()
+	}
+	return Inserted, ""
 }
 
 /*// Insert inserts the given URL, short url and redirect type into the database.
