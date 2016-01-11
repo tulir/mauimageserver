@@ -1,8 +1,10 @@
 package data
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"fmt"
+	"golang.org/x/crypto/bcrypt"
 	"strings"
 )
 
@@ -23,7 +25,7 @@ func LoadDatabase(conf SQLConfig) error {
 	} else if database == nil {
 		return fmt.Errorf("Failed to open SQL connection!")
 	}
-	_, err = database.Query("CREATE TABLE IF NOT EXISTS users (username VARCHAR(16) PRIMARY KEY, password VARCHAR(64) NOT NULL, salt VARCHAR(64) NOT NULL, authtoken VARCHAR(64));")
+	_, err = database.Query("CREATE TABLE IF NOT EXISTS users (username VARCHAR(16) PRIMARY KEY, password BINARY(60) NOT NULL, authtoken VARCHAR(64));")
 	if err != nil {
 		return err
 	}
@@ -78,6 +80,37 @@ func Insert(path, name, adder, adderip string) (InsertResult, string) {
 		return Errored, err.Error()
 	}
 	return Inserted, ""
+}
+
+// Login generates an authentication token for the user.
+func Login(username string, password []byte) string {
+	var correctPassword = false
+	result, err := database.Query("SELECT password FROM users WHERE name=?", username)
+	if err == nil {
+		for result.Next() {
+			if result.Err() != nil {
+				break
+			}
+			var hash []byte
+			result.Scan(&hash)
+			if len(hash) != 0 {
+				err = bcrypt.CompareHashAndPassword(hash, password)
+				correctPassword = err == nil
+			}
+		}
+	}
+	if !correctPassword {
+		return ""
+	}
+	// TODO: Generate cryptographically secure auth token, put it in the database and return it.
+	return ""
+}
+
+// Register creates an account and generates an authentication token for it.
+func Register(username string, password []byte) string {
+	hash, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
+	// TODO: Insert data into database.
+	return ""
 }
 
 /*// Insert inserts the given URL, short url and redirect type into the database.
