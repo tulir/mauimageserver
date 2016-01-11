@@ -8,12 +8,14 @@ import (
 type InsertForm struct {
 	Image       string `json:"image"`
 	RequestPath string `json:"request-path"`
+	Username    string `json:"username"`
 	AuthToken   string `json:"auth-token"`
 }
 
 // DeleteForm is the form for deleting images. AuthToken is required.
 type DeleteForm struct {
 	ImagePath string `json:"image-path"`
+	Username  string `json:"username"`
 	AuthToken string `json:"auth-token"`
 }
 
