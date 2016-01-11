@@ -23,11 +23,13 @@ func LoadDatabase(conf SQLConfig) error {
 	} else if database == nil {
 		return fmt.Errorf("Failed to open SQL connection!")
 	}
-	result, err := database.Query("CREATE TABLE IF NOT EXISTS users (username VARCHAR(16) PRIMARY KEY, password VARCHAR(64) NOT NULL, salt VARCHAR(64), authtoken VARCHAR(64));")
+	_, err = database.Query("CREATE TABLE IF NOT EXISTS users (username VARCHAR(16) PRIMARY KEY, password VARCHAR(64) NOT NULL, salt VARCHAR(64) NOT NULL, authtoken VARCHAR(64));")
 	if err != nil {
 		return err
-	} else if result.Err() != nil {
-		return result.Err()
+	}
+	_, err = database.Query("CREATE TABLE IF NOT EXISTS images (path VARCHAR(255), name VARCHAR(32) NOT NULL, adder VARCHAR(16));")
+	if err != nil {
+		return err
 	}
 	return nil
 }
