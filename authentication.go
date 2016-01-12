@@ -14,31 +14,49 @@ type AuthForm struct {
 }
 
 // AuthResponse is the generic authentication response which can be used for both, logging in and registering.
-// If the login/register was successful, the error field should not exist. In other cases, the auth token field
-// should not exist.
 type AuthResponse struct {
 	AuthToken string `json:"auth-token"`
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
+	// Create a json decoder for the payload.
 	decoder := json.NewDecoder(r.Body)
 	var af AuthForm
+	// Decode the payload.
 	err := decoder.Decode(&af)
-	if err != nil {
+	// Check if there was an error decoding.
+	if err != nil || len(af.Password) == 0 || len(af.Username) == 0 {
+		log.Debugf("%[1]s sent an invalid request.", getIP(r))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	// Try to login
 	authToken, err := data.Login(af.Username, []byte(af.Password))
+	// Check if there was an error logging in.
 	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
+		// Error detected.
+		if err.Error() == "incorrectpassword" {
+			log.Debugf("%[1]s tried to log in as %[2]s with the incorrect password.", getIP(r), af.Username)
+			// Incorrect password. Write unauthorized status.
+			w.WriteHeader(http.StatusUnauthorized)
+		} else {
+			log.Errorf("Login error: %s", err)
+			// Other error. Write internal server error status.
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
+	// Marshal the response
 	json, err := json.Marshal(AuthResponse{AuthToken: authToken})
+	// Check if there was an error marshaling the response.
 	if err != nil {
-		log.Errorf("Failed to marshal output json: %s", err)
+		// Error detected. Log it.
+		log.Errorf("Failed to marshal output json to %[1]s (%[2]s): %[3]s", getIP(r), af.Username, err)
+		// Write internal serevr error status.
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	log.Debugf("%[1]s logged in as %[2]s successfully.", getIP(r), af.Username)
 	w.WriteHeader(http.StatusOK)
 	w.Write(json)
 }
