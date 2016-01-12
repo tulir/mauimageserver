@@ -86,7 +86,7 @@ func Insert(path, name, adder, adderip string) (InsertResult, string) {
 func Login(username string, password []byte) (string, error) {
 	var correctPassword = false
 	// Get the password of the given user.
-	result, err := database.Query("SELECT password FROM users WHERE name=?;", username)
+	result, err := database.Query("SELECT password FROM users WHERE username=?;", username)
 	// Check if there was an error.
 	if err == nil {
 		// Loop through the result rows.
@@ -95,9 +95,9 @@ func Login(username string, password []byte) (string, error) {
 			if result.Err() != nil {
 				break
 			}
-			// Define the hash byte array.
+			// Define the byte array for the password hash in the database.
 			var hash []byte
-			// Scan the data from the result.
+			// Scan the hash from the database result into the previously defined byte array.
 			result.Scan(&hash)
 			// Make sure the scan was successful.
 			if len(hash) != 0 {
