@@ -9,10 +9,11 @@ import (
 
 // Configuration is a container struct for the configuration.
 type Configuration struct {
-	TrustHeaders bool      `json:"trust-headers"`
-	IP           string    `json:"ip"`
-	Port         int       `json:"port"`
-	SQL          SQLConfig `json:"sql"`
+	ImageLocation string    `json:"default-image-location"`
+	TrustHeaders  bool      `json:"trust-headers"`
+	IP            string    `json:"ip"`
+	Port          int       `json:"port"`
+	SQL           SQLConfig `json:"sql"`
 }
 
 // SQLConfig is the part of the config where details of the SQL database are stored.
