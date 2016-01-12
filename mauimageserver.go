@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	flag "github.com/ogier/pflag"
 	"maunium.net/go/mauimageserver/data"
 	log "maunium.net/go/maulogger"
@@ -10,7 +11,7 @@ import (
 	"strconv"
 )
 
-var debug = flag.Bool("d", false, "Enable to print debug messages to stdout")
+var debug = flag.BoolP("debug", "d", false, "Enable to print debug messages to stdout")
 var confPath = flag.StringP("config", "c", "./config.json", "The path of the mauImageServer configuration file.")
 
 var config *data.Configuration
@@ -28,6 +29,7 @@ func main() {
 	loadConfig()
 	loadDatabase()
 
+	log.Infof("Registering handlers")
 	http.HandleFunc("/login", login)
 	http.HandleFunc("/register", register)
 	http.HandleFunc("/insert", insert)
