@@ -31,9 +31,9 @@ const (
 
 var src = mrand.NewSource(time.Now().UnixNano())
 
-// ImageName generates a string matching [a-zA-Z0-9]{5}
-func ImageName() string {
-	b := make([]byte, 5)
+// ImageName generates a string matching [a-zA-Z0-9]{length}
+func ImageName(length int) string {
+	b := make([]byte, length)
 	for i, cache, remain := 4, src.Int63(), letterIdxMax; i >= 0; {
 		if remain == 0 {
 			cache, remain = src.Int63(), letterIdxMax
