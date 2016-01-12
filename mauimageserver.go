@@ -59,6 +59,13 @@ func loadDatabase() {
 	log.Debugln("Successfully loaded database.")
 }
 
+func getIP(r *http.Request) string {
+	if config.TrustHeaders {
+		return r.Header.Get("X-Forwarded-For")
+	}
+	return r.RemoteAddr
+}
+
 /*func handleConnection(conn net.Conn, pwd string) {
 	reader := bufio.NewReader(conn)
 	message, _ := reader.ReadString('\n')
