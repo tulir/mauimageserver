@@ -113,8 +113,33 @@ func Login(username string, password []byte) string {
 // Register creates an account and generates an authentication token for it.
 func Register(username string, password []byte) string {
 	hash, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
-	// TODO: Insert data into database.
-	return ""
+	if err != nil {
+		return "hash"
+	}
+
+	authToken := random.AuthToken()
+	if authToken == "" {
+		return "authgen"
+	}
+
+	result, err := database.Query("SELECT EXISTS(SELECT 1 FROM users WHERE username=?)", username)
+	if err == nil {
+		for result.Next() {
+			if result.Err() != nil {
+				break
+			}
+			var res int
+			result.Scan(&res)
+			if res == 1 {
+				return "userexists"
+			}
+		}
+	}
+	_, err = database.Query("INSERT INTO users VALUES(?, ?, ?)", username, hash, authToken)
+	if err != nil {
+		return "inserterror"
+	}
+	return authToken
 }
 
 /*// Insert inserts the given URL, short url and redirect type into the database.
