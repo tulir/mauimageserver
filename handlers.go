@@ -1,6 +1,11 @@
 package main
 
 import (
+	"encoding/base64"
+	"encoding/json"
+	"io/ioutil"
+	"maunium.net/go/mauimageserver/random"
+	log "maunium.net/go/maulogger"
 	"net/http"
 )
 
@@ -24,7 +29,29 @@ func get(w http.ResponseWriter, r *http.Request) {
 }
 
 func insert(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement inserting images. POST requests only.
+	// Create a json decoder for the payload.
+	decoder := json.NewDecoder(r.Body)
+	var ifr InsertForm
+	// Decode the payload.
+	err := decoder.Decode(&ifr)
+	// Check if there was an error decoding.
+	if err != nil || len(ifr.Image) == 0 {
+		log.Debugf("%[1]s sent an invalid insert request.", getIP(r))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	var path = ifr.RequestPath
+	if len(path) == 0 {
+		path = random.ImageName(5)
+	}
+
+	// TODO: Check if config.ImageLocation/path exists.
+
+	var image []byte
+	base64.StdEncoding.Decode(image, []byte(ifr.Image))
+	ioutil.WriteFile(config.ImageLocation+"/"+path+".png", image, 0644)
+
 }
 
 func delete(w http.ResponseWriter, r *http.Request) {
