@@ -26,7 +26,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&af)
 	// Check if there was an error decoding.
 	if err != nil || len(af.Password) == 0 || len(af.Username) == 0 {
-		log.Debugf("%[1]s sent an invalid request.", getIP(r))
+		log.Debugf("%[1]s sent an invalid login request.", getIP(r))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -69,7 +69,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&af)
 	// Check if there was an error decoding.
 	if err != nil || len(af.Password) == 0 || len(af.Username) == 0 {
-		log.Debugf("%[1]s sent an invalid request.", getIP(r))
+		log.Debugf("%[1]s sent an invalid register request.", getIP(r))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
