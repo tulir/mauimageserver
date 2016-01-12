@@ -1,6 +1,9 @@
 package main
 
 import (
+	"encoding/json"
+	"maunium.net/go/mauimageserver/data"
+	log "maunium.net/go/maulogger"
 	"net/http"
 )
 
@@ -15,11 +18,29 @@ type AuthForm struct {
 // should not exist.
 type AuthResponse struct {
 	AuthToken string `json:"auth-token"`
-	Error     string `json:"error"`
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement login
+	decoder := json.NewDecoder(r.Body)
+	var af AuthForm
+	err := decoder.Decode(&af)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	authToken, err := data.Login(af.Username, []byte(af.Password))
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	json, err := json.Marshal(AuthResponse{AuthToken: authToken})
+	if err != nil {
+		log.Errorf("Failed to marshal output json: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(json)
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
