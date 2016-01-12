@@ -48,10 +48,13 @@ func insert(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Check if config.ImageLocation/path exists.
 
-	var image []byte
-	base64.StdEncoding.Decode(image, []byte(ifr.Image))
+	image, err := base64.StdEncoding.DecodeString(ifr.Image)
+	if err != nil {
+		// TODO: Handle error
+	}
 	ioutil.WriteFile(config.ImageLocation+"/"+path+".png", image, 0644)
 
+	// TODO: Insert info into database.
 }
 
 func delete(w http.ResponseWriter, r *http.Request) {
