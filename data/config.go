@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	log "maunium.net/go/maulogger"
 	"strings"
 )
 
@@ -65,8 +64,6 @@ func LoadConfig(path string) (*Configuration, error) {
 	if err != nil {
 		return nil, err
 	}
-	// No error, parse the data
-	log.Infof("Reading config data...")
 	err = json.Unmarshal(data, config)
 	// Check if parsing failed
 	if err != nil {
