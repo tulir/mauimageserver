@@ -1,10 +1,10 @@
 package data
 
 import (
-	"crypto/rand"
 	"database/sql"
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
+	"maunium.net/go/mauimageserver/random"
 	"strings"
 )
 
@@ -100,10 +100,14 @@ func Login(username string, password []byte) string {
 		}
 	}
 	if !correctPassword {
-		return ""
+		return "pwd"
 	}
-	// TODO: Generate cryptographically secure auth token, put it in the database and return it.
-	return ""
+	authToken := random.AuthToken()
+	if authToken == "" {
+		return "authgen"
+	}
+	database.Query("UPDATE users SET authtoken=? WHERE name=?;", authToken, username)
+	return authToken
 }
 
 // Register creates an account and generates an authentication token for it.
