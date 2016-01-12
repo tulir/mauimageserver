@@ -83,45 +83,68 @@ func Insert(path, name, adder, adderip string) (InsertResult, string) {
 }
 
 // Login generates an authentication token for the user.
-func Login(username string, password []byte) string {
+func Login(username string, password []byte) (string, error) {
 	var correctPassword = false
-	result, err := database.Query("SELECT password FROM users WHERE name=?", username)
+	// Get the password of the given user.
+	result, err := database.Query("SELECT password FROM users WHERE name=?;", username)
+	// Check if there was an error.
 	if err == nil {
+		// Loop through the result rows.
 		for result.Next() {
+			// Check if the current result has an error.
 			if result.Err() != nil {
 				break
 			}
+			// Define the hash byte array.
 			var hash []byte
+			// Scan the data from the result.
 			result.Scan(&hash)
+			// Make sure the scan was successful.
 			if len(hash) != 0 {
+				// Compare the hash and the given password.
 				err = bcrypt.CompareHashAndPassword(hash, password)
+				// Set the correctPassword field to the correct value.
 				correctPassword = err == nil
 			}
 		}
 	}
+	// Check if the password was correct.
 	if !correctPassword {
-		return "pwd"
+		// Return error if the password was wrong.
+		return "", fmt.Errorf("incorrectpassword")
 	}
+	// Generate an authentication token.
 	authToken := random.AuthToken()
+	// Make sure it was generated.
 	if authToken == "" {
-		return "authgen"
+		// Generation failed, return error
+		return "", fmt.Errorf("authtoken-generror")
 	}
+	// Update database.
 	database.Query("UPDATE users SET authtoken=? WHERE name=?;", authToken, username)
-	return authToken
+	// Return auth token.
+	return authToken, nil
 }
 
 // Register creates an account and generates an authentication token for it.
-func Register(username string, password []byte) string {
+func Register(username string, password []byte) (string, error) {
+	// Generate the bcrypt hash from the given password.
 	hash, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
+	// Make sure nothing went wrong.
 	if err != nil {
-		return "hash"
+		// Something went wrong, return error.
+		return "", fmt.Errorf("hashgen")
 	}
 
+	// Generate an authentication token.
 	authToken := random.AuthToken()
+	// Make sure it was generated.
 	if authToken == "" {
-		return "authgen"
+		// Generation failed, return error.
+		return "", fmt.Errorf("authtoken-generror")
 	}
 
+	// Check if the username already exists in the database.
 	result, err := database.Query("SELECT EXISTS(SELECT 1 FROM users WHERE username=?)", username)
 	if err == nil {
 		for result.Next() {
@@ -131,15 +154,22 @@ func Register(username string, password []byte) string {
 			var res int
 			result.Scan(&res)
 			if res == 1 {
-				return "userexists"
+				// User exists, return error.
+				return "", fmt.Errorf("userexists")
 			}
 		}
 	}
+
+	// Insert user into database.
 	_, err = database.Query("INSERT INTO users VALUES(?, ?, ?)", username, hash, authToken)
+	// Make sure nothing went wrong.
 	if err != nil {
-		return "inserterror"
+		// Something went wrong, return error.
+		return "", fmt.Errorf("inserterror")
 	}
-	return authToken
+
+	// Return the auth token.
+	return authToken, nil
 }
 
 /*// Insert inserts the given URL, short url and redirect type into the database.
