@@ -25,7 +25,7 @@ func LoadDatabase(conf SQLConfig) error {
 	} else if database == nil {
 		return fmt.Errorf("Failed to open SQL connection!")
 	}
-	_, err = database.Query("CREATE TABLE IF NOT EXISTS users (username VARCHAR(16) PRIMARY KEY, password BINARY(60) NOT NULL, authtoken VARCHAR(64));")
+	_, err = database.Query("CREATE TABLE IF NOT EXISTS users (username VARCHAR(16) PRIMARY KEY, password BINARY(60) NOT NULL, authtoken BINARY(60));")
 	if err != nil {
 		return err
 	}
@@ -64,6 +64,35 @@ func Insert(imageName, adder, adderip string) error {
 	return nil
 }
 
+// CheckAuthToken checks if the given auth token is valid for the given user.
+func CheckAuthToken(username string, authtoken []byte) error {
+	result, err := database.Query("SELECT authtoken FROM users WHERE username=?;", username)
+	// Check if there was an error.
+	if err == nil {
+		// Loop through the result rows.
+		for result.Next() {
+			// Check if the current result has an error.
+			if result.Err() != nil {
+				break
+			}
+			// Define the byte array for the password hash in the database.
+			var hash []byte
+			// Scan the hash from the database result into the previously defined byte array.
+			result.Scan(&hash)
+			// Make sure the scan was successful.
+			if len(hash) != 0 {
+				// Compare the hash and the given password.
+				err = bcrypt.CompareHashAndPassword(hash, authtoken)
+				if err != nil {
+					return fmt.Errorf("invalid-authtoken")
+				}
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("invalid-authtoken")
+}
+
 // Login generates an authentication token for the user.
 func Login(username string, password []byte) (string, error) {
 	var correctPassword = false
@@ -95,15 +124,14 @@ func Login(username string, password []byte) (string, error) {
 		// Return error if the password was wrong.
 		return "", fmt.Errorf("incorrectpassword")
 	}
-	// Generate an authentication token.
-	authToken := random.AuthToken()
-	// Make sure it was generated.
-	if authToken == "" {
-		// Generation failed, return error
+
+	authToken, authHash := newAuthToken()
+	if len(authToken) == 0 {
 		return "", fmt.Errorf("authtoken-generror")
 	}
+
 	// Update database.
-	database.Query("UPDATE users SET authtoken=? WHERE name=?;", authToken, username)
+	database.Query("UPDATE users SET authtoken=? WHERE name=?;", authHash, username)
 	// Return auth token.
 	return authToken, nil
 }
@@ -118,11 +146,8 @@ func Register(username string, password []byte) (string, error) {
 		return "", fmt.Errorf("hashgen")
 	}
 
-	// Generate an authentication token.
-	authToken := random.AuthToken()
-	// Make sure it was generated.
-	if authToken == "" {
-		// Generation failed, return error.
+	authToken, authHash := newAuthToken()
+	if len(authToken) == 0 {
 		return "", fmt.Errorf("authtoken-generror")
 	}
 
@@ -143,7 +168,7 @@ func Register(username string, password []byte) (string, error) {
 	}
 
 	// Insert user into database.
-	_, err = database.Query("INSERT INTO users VALUES(?, ?, ?)", username, hash, authToken)
+	_, err = database.Query("INSERT INTO users VALUES(?, ?, ?)", username, hash, authHash)
 	// Make sure nothing went wrong.
 	if err != nil {
 		// Something went wrong, return error.
@@ -152,4 +177,23 @@ func Register(username string, password []byte) (string, error) {
 
 	// Return the auth token.
 	return authToken, nil
+}
+
+func newAuthToken() (string, []byte) {
+	// Generate an authentication token.
+	authToken := random.AuthToken()
+	// Make sure it was generated.
+	if authToken == "" {
+		// Generation failed, return error.
+		return "", nil
+	}
+
+	// Generate the bcrypt hash from the generated authentication token.
+	authHash, err := bcrypt.GenerateFromPassword([]byte(authToken), bcrypt.DefaultCost-3)
+	// Make sure nothing went wrong.
+	if err != nil {
+		// Something went wrong, return error.
+		return "", nil
+	}
+	return authToken, authHash
 }

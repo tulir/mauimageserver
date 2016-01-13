@@ -60,6 +60,19 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = data.CheckAuthToken(ifr.Username, []byte(ifr.AuthToken))
+	// Check if the auth token was correct
+	if err != nil {
+		log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, ifr.Username)
+		if !output(w, InsertResponse{
+			Status:         "invalid-authtoken",
+			StatusReadable: "The authentication token was incorrect. Please try logging in again.",
+		}, http.StatusUnauthorized) {
+			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
+		}
+		return
+	}
+
 	imageName := ifr.RequestName
 	if len(imageName) == 0 {
 		imageName = random.ImageName(5)
@@ -94,22 +107,20 @@ func insert(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		if output(w, InsertResponse{
+		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (new).", ifr.Username, ip, imageName)
+		if !output(w, InsertResponse{
 			Status:         "created",
 			StatusReadable: "The image was successfully saved with the name " + imageName,
 		}, http.StatusCreated) {
-			log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (new).", ifr.Username, ip, imageName)
-		} else {
 			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
 		}
 	} else {
-		if output(w, InsertResponse{
+		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (replaced).", ifr.Username, ip, imageName)
+		if !output(w, InsertResponse{
 			Status: "replaced",
 			StatusReadable: "The image was successfully saved with the name " + imageName +
 				", replacing your previous image with the same name",
 		}, http.StatusAccepted) {
-			log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (replaced).", ifr.Username, ip, imageName)
-		} else {
 			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
 		}
 	}
