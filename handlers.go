@@ -69,7 +69,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	owner := data.GetOwner(imageName)
 	if len(owner) > 0 {
 		if owner != ifr.Username {
-			output(w, InsertResponse{Status: "already-exists", StatusReadable: "The requested image path is already in use by another user"}, http.StatusForbidden)
+			output(w, InsertResponse{Status: "already-exists", StatusReadable: "The requested image name is already in use by another user"}, http.StatusForbidden)
 			log.Debugf("%[1]s@%[2]s attempted to override an image uploaded by %[3]s.", ifr.Username, ip, owner)
 			return
 		}
