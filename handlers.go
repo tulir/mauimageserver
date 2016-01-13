@@ -95,15 +95,15 @@ func insert(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		output(w, InsertResponse{
+			Status:         "created",
+			StatusReadable: "The image was successfully saved with the name " + imageName,
+		}, http.StatusCreated)
+	} else {
+		output(w, InsertResponse{
 			Status: "replaced",
 			StatusReadable: "The image was successfully saved with the name " + imageName +
 				", replacing your previous image with the same name",
 		}, http.StatusAccepted)
-	} else {
-		output(w, InsertResponse{
-			Status:         "created",
-			StatusReadable: "The image was successfully saved with the name " + imageName,
-		}, http.StatusCreated)
 	}
 }
 
