@@ -131,7 +131,7 @@ func Login(username string, password []byte) (string, error) {
 	}
 
 	// Update database.
-	database.Query("UPDATE users SET authtoken=? WHERE name=?;", authHash, username)
+	database.Query("UPDATE users SET authtoken=? WHERE username=?;", authHash, username)
 	// Return auth token.
 	return authToken, nil
 }
