@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	flag "github.com/ogier/pflag"
@@ -68,6 +69,20 @@ func getIP(r *http.Request) string {
 		return r.Header.Get("X-Forwarded-For")
 	}
 	return r.RemoteAddr
+}
+
+func output(w http.ResponseWriter, response interface{}, status int) bool {
+	// Marshal the response
+	json, err := json.Marshal(response)
+	// Check if there was an error marshaling the response.
+	if err != nil {
+		// Write internal server error status.
+		w.WriteHeader(http.StatusInternalServerError)
+		return false
+	}
+	w.WriteHeader(status)
+	w.Write(json)
+	return true
 }
 
 /*func handleConnection(conn net.Conn, pwd string) {

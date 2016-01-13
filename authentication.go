@@ -19,6 +19,7 @@ type AuthResponse struct {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
+	var ip = getIP(r)
 	if r.Method != "POST" {
 		w.Header().Add("Allow", "POST")
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -31,7 +32,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&af)
 	// Check if there was an error decoding.
 	if err != nil || len(af.Password) == 0 || len(af.Username) == 0 {
-		log.Debugf("%[1]s sent an invalid login request.", getIP(r))
+		log.Debugf("%[1]s sent an invalid login request.", ip)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -41,7 +42,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Error detected.
 		if err.Error() == "incorrectpassword" {
-			log.Debugf("%[1]s tried to log in as %[2]s with the incorrect password.", getIP(r), af.Username)
+			log.Debugf("%[1]s tried to log in as %[2]s with the incorrect password.", ip, af.Username)
 			// Incorrect password. Write unauthorized status.
 			w.WriteHeader(http.StatusUnauthorized)
 		} else {
@@ -56,17 +57,18 @@ func login(w http.ResponseWriter, r *http.Request) {
 	// Check if there was an error marshaling the response.
 	if err != nil {
 		// Error detected. Log it.
-		log.Errorf("Failed to marshal output json to %[1]s (%[2]s): %[3]s", getIP(r), af.Username, err)
+		log.Errorf("Failed to marshal output json to %[1]s (%[2]s): %[3]s", ip, af.Username, err)
 		// Write internal serevr error status.
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	log.Debugf("%[1]s logged in as %[2]s successfully.", getIP(r), af.Username)
+	log.Debugf("%[1]s logged in as %[2]s successfully.", ip, af.Username)
 	w.WriteHeader(http.StatusOK)
 	w.Write(json)
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
+	var ip = getIP(r)
 	if r.Method != "POST" {
 		w.Header().Add("Allow", "POST")
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -79,7 +81,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&af)
 	// Check if there was an error decoding.
 	if err != nil || len(af.Password) == 0 || len(af.Username) == 0 {
-		log.Debugf("%[1]s sent an invalid register request.", getIP(r))
+		log.Debugf("%[1]s sent an invalid register request.", ip)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -89,7 +91,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Error detected.
 		if err.Error() == "userexists" {
-			log.Debugf("%[1]s tried to register the name %[2]s, but it is already in use.", getIP(r), af.Username)
+			log.Debugf("%[1]s tried to register the name %[2]s, but it is already in use.", ip, af.Username)
 			// Username in use. Write not acceptable status.
 			w.WriteHeader(http.StatusNotAcceptable)
 		} else {
@@ -104,12 +106,12 @@ func register(w http.ResponseWriter, r *http.Request) {
 	// Check if there was an error marshaling the response.
 	if err != nil {
 		// Error detected. Log it.
-		log.Errorf("Failed to marshal output json to %[1]s (%[2]s): %[3]s", getIP(r), af.Username, err)
+		log.Errorf("Failed to marshal output json to %[1]s (%[2]s): %[3]s", ip, af.Username, err)
 		// Write internal serevr error status.
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	log.Debugf("%[1]s registered and logged in as %[2]s successfully.", getIP(r), af.Username)
+	log.Debugf("%[1]s registered and logged in as %[2]s successfully.", ip, af.Username)
 	w.WriteHeader(http.StatusOK)
 	w.Write(json)
 }
