@@ -94,16 +94,24 @@ func insert(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		output(w, InsertResponse{
+		if output(w, InsertResponse{
 			Status:         "created",
 			StatusReadable: "The image was successfully saved with the name " + imageName,
-		}, http.StatusCreated)
+		}, http.StatusCreated) {
+			log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (new).", ifr.Username, ip, imageName)
+		} else {
+			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
+		}
 	} else {
-		output(w, InsertResponse{
+		if output(w, InsertResponse{
 			Status: "replaced",
 			StatusReadable: "The image was successfully saved with the name " + imageName +
 				", replacing your previous image with the same name",
-		}, http.StatusAccepted)
+		}, http.StatusAccepted) {
+			log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (replaced).", ifr.Username, ip, imageName)
+		} else {
+			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
+		}
 	}
 }
 
