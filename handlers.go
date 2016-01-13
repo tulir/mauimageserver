@@ -25,10 +25,21 @@ type DeleteForm struct {
 }
 
 func get(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement getting images. GET requests only.
+	if r.Method != "GET" {
+		w.Header().Add("Allow", "GET")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	// TODO: Implement getting images.
+	//var path = r.URL.Path[1:]
 }
 
 func insert(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		w.Header().Add("Allow", "POST")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	// Create a json decoder for the payload.
 	decoder := json.NewDecoder(r.Body)
 	var ifr InsertForm
@@ -58,5 +69,10 @@ func insert(w http.ResponseWriter, r *http.Request) {
 }
 
 func delete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		w.Header().Add("Allow", "POST")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	// TODO: Implement deleting images. POST requests only.
 }

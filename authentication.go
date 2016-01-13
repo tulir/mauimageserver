@@ -19,6 +19,11 @@ type AuthResponse struct {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		w.Header().Add("Allow", "POST")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	// Create a json decoder for the payload.
 	decoder := json.NewDecoder(r.Body)
 	var af AuthForm
@@ -62,6 +67,11 @@ func login(w http.ResponseWriter, r *http.Request) {
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		w.Header().Add("Allow", "POST")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	// Create a json decoder for the payload.
 	decoder := json.NewDecoder(r.Body)
 	var af AuthForm
