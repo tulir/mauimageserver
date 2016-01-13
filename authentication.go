@@ -52,19 +52,11 @@ func login(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// Marshal the response
-	json, err := json.Marshal(AuthResponse{AuthToken: authToken})
-	// Check if there was an error marshaling the response.
-	if err != nil {
-		// Error detected. Log it.
+	if output(w, AuthResponse{AuthToken: authToken}, http.StatusOK) {
+		log.Debugf("%[1]s logged in as %[2]s successfully.", ip, af.Username)
+	} else {
 		log.Errorf("Failed to marshal output json to %[1]s (%[2]s): %[3]s", ip, af.Username, err)
-		// Write internal serevr error status.
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
-	log.Debugf("%[1]s logged in as %[2]s successfully.", ip, af.Username)
-	w.WriteHeader(http.StatusOK)
-	w.Write(json)
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
@@ -101,17 +93,9 @@ func register(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// Marshal the response
-	json, err := json.Marshal(AuthResponse{AuthToken: authToken})
-	// Check if there was an error marshaling the response.
-	if err != nil {
-		// Error detected. Log it.
+	if output(w, AuthResponse{AuthToken: authToken}, http.StatusOK) {
+		log.Debugf("%[1]s logged in as %[2]s successfully.", ip, af.Username)
+	} else {
 		log.Errorf("Failed to marshal output json to %[1]s (%[2]s): %[3]s", ip, af.Username, err)
-		// Write internal serevr error status.
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
-	log.Debugf("%[1]s registered and logged in as %[2]s successfully.", ip, af.Username)
-	w.WriteHeader(http.StatusOK)
-	w.Write(json)
 }
