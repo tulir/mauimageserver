@@ -55,7 +55,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	if output(w, AuthResponse{AuthToken: authToken}, http.StatusOK) {
 		log.Debugf("%[1]s logged in as %[2]s successfully.", ip, af.Username)
 	} else {
-		log.Errorf("Failed to marshal output json to %[1]s (%[2]s): %[3]s", ip, af.Username, err)
+		log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, af.Username, err)
 	}
 }
 
@@ -96,6 +96,6 @@ func register(w http.ResponseWriter, r *http.Request) {
 	if output(w, AuthResponse{AuthToken: authToken}, http.StatusOK) {
 		log.Debugf("%[1]s logged in as %[2]s successfully.", ip, af.Username)
 	} else {
-		log.Errorf("Failed to marshal output json to %[1]s (%[2]s): %[3]s", ip, af.Username, err)
+		log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, af.Username, err)
 	}
 }
