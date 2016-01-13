@@ -8,14 +8,15 @@ import (
 	"maunium.net/go/mauimageserver/random"
 	log "maunium.net/go/maulogger"
 	"net/http"
+	"os"
 )
 
 // InsertForm is the form for inserting images into the system. Requirement of AuthToken is configurable.
 type InsertForm struct {
-	Image       string `json:"image"`
-	RequestName string `json:"request-name"`
-	Username    string `json:"username"`
-	AuthToken   string `json:"auth-token"`
+	Image     string `json:"image"`
+	ImageName string `json:"image-name"`
+	Username  string `json:"username"`
+	AuthToken string `json:"auth-token"`
 }
 
 // DeleteForm is the form for deleting images. AuthToken is required.
@@ -73,7 +74,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imageName := ifr.RequestName
+	imageName := ifr.ImageName
 	if len(imageName) == 0 {
 		imageName = random.ImageName(5)
 	}
@@ -127,10 +128,46 @@ func insert(w http.ResponseWriter, r *http.Request) {
 }
 
 func delete(w http.ResponseWriter, r *http.Request) {
+	var ip = getIP(r)
 	if r.Method != "POST" {
 		w.Header().Add("Allow", "POST")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	// TODO: Implement deleting images. POST requests only.
+
+	// Create a json decoder for the payload.
+	decoder := json.NewDecoder(r.Body)
+	var dfr DeleteForm
+	// Decode the payload.
+	err := decoder.Decode(&dfr)
+	// Check if there was an error decoding.
+	if err != nil || len(dfr.ImageName) == 0 || len(dfr.Username) == 0 || len(dfr.AuthToken) == 0 {
+		log.Debugf("%[1]s sent an invalid delete request.", ip)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = data.CheckAuthToken(dfr.Username, []byte(dfr.AuthToken))
+	// Check if the auth token was correct
+	if err != nil {
+		log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, dfr.Username)
+		if !output(w, InsertResponse{
+			Status:         "invalid-authtoken",
+			StatusReadable: "The authentication token was incorrect. Please try logging in again.",
+		}, http.StatusUnauthorized) {
+			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, dfr.Username, err)
+		}
+		return
+	}
+
+	owner := data.GetOwner(dfr.ImageName)
+	if len(owner) > 0 {
+		if owner != dfr.Username {
+			output(w, InsertResponse{Status: "no-permissions", StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden)
+			log.Debugf("%[1]s@%[2]s attempted to delete an image uploaded by %[3]s.", dfr.Username, ip, owner)
+			return
+		}
+	}
+
+	os.Remove(config.ImageLocation + "/" + dfr.ImageName + ".png")
 }
