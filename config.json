@@ -1,5 +1,5 @@
 {
-    "default-image-location": "/var/mis",
+    "image-location": "/var/mis",
     "trust-headers": false,
     "ip": "127.0.0.1",
     "port": 29300,

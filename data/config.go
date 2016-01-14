@@ -9,7 +9,7 @@ import (
 
 // Configuration is a container struct for the configuration.
 type Configuration struct {
-	ImageLocation string    `json:"default-image-location"`
+	ImageLocation string    `json:"image-location"`
 	TrustHeaders  bool      `json:"trust-headers"`
 	IP            string    `json:"ip"`
 	Port          int       `json:"port"`
