@@ -85,36 +85,3 @@ func output(w http.ResponseWriter, response interface{}, status int) bool {
 	w.Write(json)
 	return true
 }
-
-/*func handleConnection(conn net.Conn, pwd string) {
-	reader := bufio.NewReader(conn)
-	message, _ := reader.ReadString('\n')
-	message = strings.TrimSpace(message)
-
-	if message != pwd {
-		log.Println(conn.RemoteAddr().String() + " failed authentication (" + message + ")")
-		conn.Write([]byte("false\n"))
-		conn.Close()
-		return
-	}
-
-	conn.Write([]byte("true\n"))
-
-	name := imageName() + ".png"
-	image, err := png.Decode(conn)
-	if err != nil {
-		panic(err)
-	}
-	conn.Write([]byte(fmt.Sprintf(*addrPtr, name) + "\n"))
-	conn.Close()
-	f, err := os.Create(fmt.Sprintf(*dirPtr, name))
-	if err != nil {
-		panic(err)
-	}
-	err = png.Encode(f, image)
-	if err != nil {
-		panic(err)
-	}
-	f.Close()
-	log.Println(conn.RemoteAddr().String() + " successfully uploaded an image to " + name)
-}*/
