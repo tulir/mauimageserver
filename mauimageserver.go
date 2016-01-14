@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 )
 
 var debug = flag.BoolP("debug", "d", false, "Enable to print debug messages to stdout")
@@ -68,7 +69,7 @@ func getIP(r *http.Request) string {
 	if config.TrustHeaders {
 		return r.Header.Get("X-Forwarded-For")
 	}
-	return r.RemoteAddr
+	return strings.Split(r.RemoteAddr, ":")[0]
 }
 
 func output(w http.ResponseWriter, response interface{}, status int) bool {
