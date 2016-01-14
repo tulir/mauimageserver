@@ -11,6 +11,7 @@ import (
 type Configuration struct {
 	ImageLocation string    `json:"image-location"`
 	TrustHeaders  bool      `json:"trust-headers"`
+	RequireAuth   bool      `json:"require-authentication"`
 	IP            string    `json:"ip"`
 	Port          int       `json:"port"`
 	SQL           SQLConfig `json:"sql"`

@@ -62,28 +62,32 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = data.CheckAuthToken(ifr.Username, []byte(ifr.AuthToken))
-	// Check if the auth token was correct
-	if err != nil {
-		log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, ifr.Username)
-		if !output(w, InsertResponse{
-			Status:         "invalid-authtoken",
-			StatusReadable: "The authentication token was incorrect. Please try logging in again.",
-		}, http.StatusUnauthorized) {
-			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
-		}
-		return
-	}
-
 	imageName := ifr.ImageName
 	if len(imageName) == 0 {
 		imageName = random.ImageName(5)
 	}
 
+	if !config.RequireAuth && (len(ifr.Username) == 0 || len(ifr.AuthToken) == 0) {
+		ifr.Username = "anonymous"
+	} else {
+		err = data.CheckAuthToken(ifr.Username, []byte(ifr.AuthToken))
+		// Check if the auth token was correct
+		if err != nil {
+			log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, ifr.Username)
+			if !output(w, InsertResponse{
+				Status:         "invalid-authtoken",
+				StatusReadable: "The authentication token was incorrect. Please try logging in again.",
+			}, http.StatusUnauthorized) {
+				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
+			}
+			return
+		}
+	}
+
 	var replace = false
 	owner := data.GetOwner(imageName)
 	if len(owner) > 0 {
-		if owner != ifr.Username {
+		if owner != ifr.Username || ifr.Username == "anonymous" {
 			output(w, InsertResponse{Status: "already-exists", StatusReadable: "The requested image name is already in use by another user"}, http.StatusForbidden)
 			log.Debugf("%[1]s@%[2]s attempted to override an image uploaded by %[3]s.", ifr.Username, ip, owner)
 			return
