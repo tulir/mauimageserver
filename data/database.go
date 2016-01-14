@@ -55,13 +55,16 @@ func GetOwner(imageName string) string {
 	return ""
 }
 
+// Remove removes the image with the given name.
+func Remove(imageName string) error {
+	_, err := database.Query("DELETE FROM images WHERE imgname=?", imageName)
+	return err
+}
+
 // Insert inserts the given image name and marks it owned by the given username.
 func Insert(imageName, adder, adderip string) error {
 	_, err := database.Query("INSERT INTO images VALUES(?, ?, ?);", imageName, adder, adderip)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // CheckAuthToken checks if the given auth token is valid for the given user.

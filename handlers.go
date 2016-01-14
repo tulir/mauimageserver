@@ -9,6 +9,7 @@ import (
 	log "maunium.net/go/maulogger"
 	"net/http"
 	"os"
+	"strings"
 )
 
 // InsertForm is the form for inserting images into the system. Requirement of AuthToken is configurable.
@@ -163,11 +164,42 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	owner := data.GetOwner(dfr.ImageName)
 	if len(owner) > 0 {
 		if owner != dfr.Username {
-			output(w, InsertResponse{Status: "no-permissions", StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden)
 			log.Debugf("%[1]s@%[2]s attempted to delete an image uploaded by %[3]s.", dfr.Username, ip, owner)
+			if !output(w, InsertResponse{Status: "no-permissions", StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden) {
+				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, dfr.Username, err)
+			}
+			return
+		}
+	} else {
+		log.Debugf("%[1]s@%[2]s attempted to delete an image that doesn't exist.", dfr.Username, ip, owner)
+		if !output(w, InsertResponse{Status: "does-not-exist", StatusReadable: "The image you requested to be deleted does not exist."}, http.StatusNotFound) {
+			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, dfr.Username, err)
+		}
+		return
+	}
+
+	err = data.Remove(dfr.ImageName)
+	if err != nil {
+		log.Warnf("Error deleting %[4]s from the database (requested by %[1]s@%[2]s): %[3]s", dfr.Username, ip, err, dfr.ImageName)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	err = os.Remove(config.ImageLocation + "/" + dfr.ImageName + ".png")
+	if err != nil {
+		// If the file just didn't exist, warn about the error. If the error was something else, cancel.
+		if strings.HasSuffix(err.Error(), "no such file or directory") {
+			log.Warnf("Error deleting %[3]s from the filesystem (requested by %[1]s@%[2]s): File not found", dfr.Username, ip, dfr.ImageName)
+		} else {
+			log.Errorf("Error deleting %[4]s from the filesystem (requested by %[1]s@%[2]s): %[3]s", dfr.Username, ip, err, dfr.ImageName)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
-
-	os.Remove(config.ImageLocation + "/" + dfr.ImageName + ".png")
+	log.Debugf("%[1]s@%[2]s successfully deleted the image with the name %[3]s.", dfr.Username, ip, dfr.ImageName)
+	if !output(w, InsertResponse{
+		Status:         "deleted",
+		StatusReadable: "The image " + dfr.ImageName + " was successfully deleted.",
+	}, http.StatusAccepted) {
+		log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, dfr.Username, err)
+	}
 }
