@@ -15,7 +15,9 @@ type AuthForm struct {
 
 // AuthResponse is the generic authentication response which can be used for both, logging in and registering.
 type AuthResponse struct {
-	AuthToken string `json:"auth-token"`
+	AuthToken     string `json:"auth-token"`
+	Error         string `json:"error-simple"`
+	ErrorReadable string `json:"error-humanreadable"`
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -52,9 +54,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if output(w, AuthResponse{AuthToken: authToken}, http.StatusOK) {
-		log.Debugf("%[1]s logged in as %[2]s successfully.", ip, af.Username)
-	} else {
+	log.Debugf("%[1]s logged in as %[2]s successfully.", ip, af.Username)
+	if !output(w, AuthResponse{AuthToken: authToken}, http.StatusOK) {
 		log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, af.Username, err)
 	}
 }
@@ -77,25 +78,46 @@ func register(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	if invalidName(af.Username) {
+		log.Debugf("%[1]s tried to register with an invalid name (%[2]s)", ip, af.Username)
+		if !output(w, AuthResponse{Error: "invalidname", ErrorReadable: "The name you entered is invalid. Allowed names: [a-zA-Z0-9_-]{3,16}"}, http.StatusNotAcceptable) {
+			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, af.Username, err)
+		}
+		return
+	}
 	// Try to register
 	authToken, err := data.Register(af.Username, []byte(af.Password))
 	// Check if there was an error logging in.
 	if err != nil {
 		// Error detected.
 		if err.Error() == "userexists" {
+			// Username already in use.
 			log.Debugf("%[1]s tried to register the name %[2]s, but it is already in use.", ip, af.Username)
-			// Username in use. Write not acceptable status.
-			w.WriteHeader(http.StatusNotAcceptable)
+			if !output(w, AuthResponse{Error: "userexists", ErrorReadable: "The given username is already in use."}, http.StatusNotAcceptable) {
+				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, af.Username, err)
+			}
 		} else {
-			log.Errorf("Register error: %s", err)
 			// Other error. Write internal server error status.
+			log.Errorf("Register error: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
 	}
-	if output(w, AuthResponse{AuthToken: authToken}, http.StatusOK) {
-		log.Debugf("%[1]s logged in as %[2]s successfully.", ip, af.Username)
-	} else {
+	log.Debugf("%[1]s registered as %[2]s successfully.", ip, af.Username)
+	if !output(w, AuthResponse{AuthToken: authToken}, http.StatusOK) {
 		log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, af.Username, err)
 	}
+}
+
+func invalidName(name string) bool {
+	if len(name) < 3 || len(name) > 16 {
+		return true
+	}
+	for char := range name {
+		if (char >= 48 && char <= 57) || (char >= 65 && char <= 90) || (char >= 97 && char <= 122) || char == 95 || char == 45 {
+			continue
+		}
+		return true
+	}
+	return false
 }
