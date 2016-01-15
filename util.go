@@ -31,7 +31,7 @@ func output(w http.ResponseWriter, response interface{}, status int) bool {
 }
 
 func loadConfig() {
-	log.Infoln("Loading config...")
+	log.Infof("Loading config...")
 	var err error
 	config, err = data.LoadConfig(*confPath)
 	if err != nil {
@@ -42,7 +42,7 @@ func loadConfig() {
 }
 
 func loadDatabase() {
-	log.Infoln("Loading database...")
+	log.Infof("Loading database...")
 
 	var err error
 	err = data.LoadDatabase(config.SQL)
