@@ -115,7 +115,7 @@ func invalidName(name string) bool {
 	if len(name) < 3 || len(name) > 16 {
 		return true
 	}
-	for char := range name {
+	for _, char := range name {
 		if (char >= 48 && char <= 57) || (char >= 65 && char <= 90) || (char >= 97 && char <= 122) || char == 95 || char == 45 {
 			continue
 		}
