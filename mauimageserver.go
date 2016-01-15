@@ -28,7 +28,8 @@ func init() {
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		go func() {
 			<-c
-			log.Infof("\nShutting down mauImageServer...")
+			os.Stdout.Write([]byte("\n"))
+			log.Infof("Shutting down mauImageServer...")
 			data.UnloadDatabase()
 			os.Exit(0)
 		}()
