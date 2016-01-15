@@ -44,12 +44,14 @@ func login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Error detected.
 		if err.Error() == "incorrectpassword" {
-			log.Debugf("%[1]s tried to log in as %[2]s with the incorrect password.", ip, af.Username)
 			// Incorrect password. Write unauthorized status.
-			w.WriteHeader(http.StatusUnauthorized)
+			log.Debugf("%[1]s tried to log in as %[2]s with the incorrect password.", ip, af.Username)
+			if !output(w, AuthResponse{Error: "incorrectpassword", ErrorReadable: "The username or password was incorrect."}, http.StatusUnauthorized) {
+				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, af.Username, err)
+			}
 		} else {
-			log.Errorf("Login error: %s", err)
 			// Other error. Write internal server error status.
+			log.Errorf("Login error: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
