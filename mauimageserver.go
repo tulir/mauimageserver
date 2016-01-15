@@ -8,17 +8,34 @@ import (
 	"maunium.net/go/mauimageserver/data"
 	log "maunium.net/go/maulogger"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 )
 
 var debug = flag.BoolP("debug", "d", false, "Enable to print debug messages to stdout")
 var confPath = flag.StringP("config", "c", "./config.json", "The path of the mauImageServer configuration file.")
+var disableSafeShutdown = flag.Bool("no-safe-shutdown", false, "Disable Interrupt/SIGTERM catching and handling.")
 
 var config *data.Configuration
 
-func main() {
+func init() {
 	flag.Parse()
 
+	if !*disableSafeShutdown {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		go func() {
+			<-c
+			log.Infof("Shutting down mauImageServer...")
+			data.UnloadDatabase()
+			os.Exit(0)
+		}()
+	}
+}
+
+func main() {
 	// Configure the logger
 	log.PrintDebug = *debug
 	log.Fileformat = func(date string, i int) string { return fmt.Sprintf("logs/%[1]s-%02[2]d.log", date, i) }

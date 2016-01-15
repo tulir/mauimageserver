@@ -38,6 +38,11 @@ func LoadDatabase(conf SQLConfig) error {
 	return nil
 }
 
+// UnloadDatabase unloads the database.
+func UnloadDatabase() {
+	database.Close()
+}
+
 // GetOwner gets the owner of the image with the given name.
 func GetOwner(imageName string) string {
 	result, err := database.Query("SELECT adder FROM images WHERE imgname=?", imageName)
