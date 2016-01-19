@@ -15,9 +15,9 @@ type AuthForm struct {
 
 // AuthResponse is the generic authentication response which can be used for both, logging in and registering.
 type AuthResponse struct {
-	AuthToken     string `json:"auth-token"`
-	Error         string `json:"error-simple"`
-	ErrorReadable string `json:"error-humanreadable"`
+	AuthToken     string `json:"auth-token,omitempty"`
+	Error         string `json:"error-simple,omitempty"`
+	ErrorReadable string `json:"error-humanreadable,omitempty"`
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
