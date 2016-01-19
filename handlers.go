@@ -29,6 +29,7 @@ type DeleteForm struct {
 
 // InsertResponse is the response for an insert call.
 type InsertResponse struct {
+	Success        bool   `json:"success"`
 	Status         string `json:"status-simple"`
 	StatusReadable string `json:"status-humanreadable"`
 }
@@ -75,6 +76,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, ifr.Username)
 			if !output(w, InsertResponse{
+				Success:        false,
 				Status:         "invalid-authtoken",
 				StatusReadable: "The authentication token was incorrect. Please try logging in again.",
 			}, http.StatusUnauthorized) {
@@ -88,7 +90,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	owner := data.GetOwner(imageName)
 	if len(owner) > 0 {
 		if owner != ifr.Username || ifr.Username == "anonymous" {
-			output(w, InsertResponse{Status: "already-exists", StatusReadable: "The requested image name is already in use by another user"}, http.StatusForbidden)
+			output(w, InsertResponse{Success: false, Status: "already-exists", StatusReadable: "The requested image name is already in use by another user"}, http.StatusForbidden)
 			log.Debugf("%[1]s@%[2]s attempted to override an image uploaded by %[3]s.", ifr.Username, ip, owner)
 			return
 		}
@@ -115,6 +117,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (new).", ifr.Username, ip, imageName)
 		if !output(w, InsertResponse{
+			Success:        true,
 			Status:         "created",
 			StatusReadable: "The image was successfully saved with the name " + imageName,
 		}, http.StatusCreated) {
@@ -123,7 +126,8 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (replaced).", ifr.Username, ip, imageName)
 		if !output(w, InsertResponse{
-			Status: "replaced",
+			Success: true,
+			Status:  "replaced",
 			StatusReadable: "The image was successfully saved with the name " + imageName +
 				", replacing your previous image with the same name",
 		}, http.StatusAccepted) {
@@ -157,6 +161,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, dfr.Username)
 		if !output(w, InsertResponse{
+			Success:        false,
 			Status:         "invalid-authtoken",
 			StatusReadable: "The authentication token was incorrect. Please try logging in again.",
 		}, http.StatusUnauthorized) {
@@ -169,14 +174,14 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	if len(owner) > 0 {
 		if owner != dfr.Username {
 			log.Debugf("%[1]s@%[2]s attempted to delete an image uploaded by %[3]s.", dfr.Username, ip, owner)
-			if !output(w, InsertResponse{Status: "no-permissions", StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden) {
+			if !output(w, InsertResponse{Success: false, Status: "no-permissions", StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden) {
 				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, dfr.Username, err)
 			}
 			return
 		}
 	} else {
 		log.Debugf("%[1]s@%[2]s attempted to delete an image that doesn't exist.", dfr.Username, ip, owner)
-		if !output(w, InsertResponse{Status: "does-not-exist", StatusReadable: "The image you requested to be deleted does not exist."}, http.StatusNotFound) {
+		if !output(w, InsertResponse{Success: false, Status: "does-not-exist", StatusReadable: "The image you requested to be deleted does not exist."}, http.StatusNotFound) {
 			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, dfr.Username, err)
 		}
 		return
@@ -201,6 +206,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Debugf("%[1]s@%[2]s successfully deleted the image with the name %[3]s.", dfr.Username, ip, dfr.ImageName)
 	if !output(w, InsertResponse{
+		Success:        true,
 		Status:         "deleted",
 		StatusReadable: "The image " + dfr.ImageName + " was successfully deleted.",
 	}, http.StatusAccepted) {
