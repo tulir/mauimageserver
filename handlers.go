@@ -101,11 +101,13 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Errorf("Error while decoding image from %[1]s@%[2]s: %[3]s", ifr.Username, ip, err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	err = ioutil.WriteFile(config.ImageLocation+"/"+imageName+".png", image, 0644)
 	if err != nil {
 		log.Errorf("Error while saving image from %[1]s@%[2]s: %[3]s", ifr.Username, ip, err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	if !replace {
