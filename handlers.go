@@ -68,8 +68,18 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		imageName = random.ImageName(5)
 	}
 
-	if !config.RequireAuth && (len(ifr.Username) == 0 || len(ifr.AuthToken) == 0) {
-		ifr.Username = "anonymous"
+	if len(ifr.Username) == 0 || len(ifr.AuthToken) == 0 {
+		if config.RequireAuth {
+			if !output(w, InsertResponse{
+				Success:        false,
+				Status:         "not-logged-in",
+				StatusReadable: "This MIS server requires authentication. Please log in or register.",
+			}, http.StatusUnauthorized) {
+				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
+			}
+		} else {
+			ifr.Username = "anonymous"
+		}
 	} else {
 		err = data.CheckAuthToken(ifr.Username, []byte(ifr.AuthToken))
 		// Check if the auth token was correct
@@ -78,7 +88,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 			if !output(w, InsertResponse{
 				Success:        false,
 				Status:         "invalid-authtoken",
-				StatusReadable: "The authentication token was incorrect. Please try logging in again.",
+				StatusReadable: "Your authentication token was incorrect. Please try logging in again.",
 			}, http.StatusUnauthorized) {
 				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
 			}
