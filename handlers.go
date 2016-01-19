@@ -40,8 +40,13 @@ func get(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	// TODO: Implement getting images.
-	//var path = r.URL.Path[1:]
+
+	data, err := ioutil.ReadFile(config.ImageLocation + r.URL.Path)
+	if err != nil {
+		log.Errorf("%[1]s tried to get the non-existent image %[2]s", getIP(r), r.URL.Path[1:])
+		w.WriteHeader(http.StatusNotFound)
+	}
+	w.Write(data)
 }
 
 func insert(w http.ResponseWriter, r *http.Request) {
