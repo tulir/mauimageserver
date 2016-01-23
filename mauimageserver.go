@@ -5,6 +5,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 	flag "github.com/ogier/pflag"
+	"io/ioutil"
 	"maunium.net/go/mauimageserver/data"
 	log "maunium.net/go/maulogger"
 	"net/http"
@@ -19,6 +20,7 @@ var confPath = flag.StringP("config", "c", "./config.json", "The path of the mau
 var disableSafeShutdown = flag.Bool("no-safe-shutdown", false, "Disable Interrupt/SIGTERM catching and handling.")
 
 var config *data.Configuration
+var favicon []byte
 
 func init() {
 	flag.Parse()
@@ -46,6 +48,9 @@ func main() {
 	log.Infof("Initializing mauImageServer")
 	loadConfig()
 	loadDatabase()
+
+	log.Debugln("Loading favicon...")
+	favicon, _ = ioutil.ReadFile(config.Favicon)
 
 	log.Infof("Registering handlers")
 	http.HandleFunc("/auth/login", login)

@@ -41,10 +41,17 @@ func get(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	path := r.URL.Path[1:]
+
+	if path == "" || path == "index.html" || path == "index.php" || path == "index" || path == "index.htm" {
+		// TODO: Index page?
+	} else if path == "favicon.ico" {
+		w.Write(favicon)
+	}
 
 	data, err := ioutil.ReadFile(config.ImageLocation + r.URL.Path)
 	if err != nil {
-		log.Errorf("%[1]s tried to get the non-existent image %[2]s", getIP(r), r.URL.Path[1:])
+		log.Errorf("%[1]s tried to get the non-existent image %[2]s", getIP(r), path)
 		w.WriteHeader(http.StatusNotFound)
 	}
 	w.Write(data)
