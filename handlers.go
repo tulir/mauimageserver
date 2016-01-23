@@ -16,6 +16,7 @@ import (
 type InsertForm struct {
 	Image     string `json:"image"`
 	ImageName string `json:"image-name"`
+	Client    string `json:"client-name"`
 	Username  string `json:"username"`
 	AuthToken string `json:"auth-token"`
 }
@@ -125,8 +126,12 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(ifr.Client) == 0 {
+		ifr.Client = "Unknown"
+	}
+
 	if !replace {
-		err = data.Insert(imageName, ifr.Username, ip)
+		err = data.Insert(imageName, ifr.Username, ip, ifr.Client)
 		if err != nil {
 			log.Errorf("Error while inserting image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
 			w.WriteHeader(http.StatusInternalServerError)
