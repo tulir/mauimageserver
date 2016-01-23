@@ -9,7 +9,9 @@ import (
 	log "maunium.net/go/maulogger"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // InsertForm is the form for inserting images into the system. Requirement of AuthToken is configurable.
@@ -46,14 +48,33 @@ func get(w http.ResponseWriter, r *http.Request) {
 	if path == "" || path == "index.html" || path == "index.php" || path == "index" || path == "index.htm" {
 		// TODO: Index page?
 	} else if path == "favicon.ico" {
+		w.WriteHeader(http.StatusFound)
 		w.Write(favicon)
+		return
+	}
+
+	adder, _, client, timestamp, index, err := data.Query(path)
+	if err == nil {
+		date := time.Unix(timestamp, 0).Format(config.DateFormat)
+		r.URL.Path = r.URL.Path + ".png"
+		image.Execute(w, imageTemplate{
+			ImageName: path,
+			ImageAddr: r.URL.String(),
+			Uploader:  adder,
+			Client:    client,
+			Date:      date,
+			Index:     strconv.Itoa(index),
+		})
+		return
 	}
 
 	data, err := ioutil.ReadFile(config.ImageLocation + r.URL.Path)
 	if err != nil {
 		log.Errorf("%[1]s tried to get the non-existent image %[2]s", getIP(r), path)
 		w.WriteHeader(http.StatusNotFound)
+		return
 	}
+	w.WriteHeader(http.StatusFound)
 	w.Write(data)
 }
 
@@ -134,7 +155,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(ifr.Client) == 0 {
-		ifr.Client = "Unknown"
+		ifr.Client = "Unknown Client"
 	}
 
 	if !replace {

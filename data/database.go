@@ -6,6 +6,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"maunium.net/go/mauimageserver/random"
 	"strings"
+	"time"
 )
 
 var database *sql.DB
@@ -31,7 +32,14 @@ func LoadDatabase(conf SQLConfig) error {
 	if err != nil {
 		return err
 	}
-	_, err = database.Query("CREATE TABLE IF NOT EXISTS images (imgname VARCHAR(32) PRIMARY KEY, adder VARCHAR(16), adderip VARCHAR(64));")
+	_, err = database.Query("CREATE TABLE IF NOT EXISTS images (" +
+		"imgname VARCHAR(32) PRIMARY KEY," +
+		"adder VARCHAR(16) NOT NULL," +
+		"adderip VARCHAR(64) NOT NULL," +
+		"client VARCHAR(127) NOT NULL," +
+		"timestamp BIGINT NOT NULL," +
+		"id MEDIUMINT UNIQUE KEY AUTO_INCREMENT" +
+		");")
 	if err != nil {
 		return err
 	}
@@ -70,8 +78,33 @@ func Remove(imageName string) error {
 
 // Insert inserts the given image name and marks it owned by the given username.
 func Insert(imageName, adder, adderip, client string) error {
-	_, err := database.Query("INSERT INTO images VALUES(?, ?, ?, ?);", imageName, adder, adderip, client)
+	_, err := database.Query("INSERT INTO images (imgname, adder, adderip, client, timestamp) VALUES (?, ?, ?, ?, ?);", imageName, adder, adderip, client, time.Now().Unix())
 	return err
+}
+
+// Query for basic details of the given image.
+func Query(imageName string) (string, string, string, int64, int, error) {
+	result, err := database.Query("SELECT adder, adderip, client, timestamp, id FROM images WHERE imgname=?", imageName)
+	if err != nil {
+		return "", "", "", 0, 0, err
+	}
+	for result.Next() {
+		if result.Err() != nil {
+			return "", "", "", 0, 0, result.Err()
+		}
+		var adder, adderip, client string
+		var timestamp int64
+		var id int
+		err = result.Scan(&adder, &adderip, &client, &timestamp, &id)
+		if err != nil {
+			return "", "", "", 0, 0, err
+		} else if len(adder) == 0 || len(adderip) == 0 || len(client) == 0 || timestamp < 1 || id < 1 {
+			println(adder, adderip, client, timestamp, id)
+			return adder, adderip, client, timestamp, id, fmt.Errorf("Invalid data")
+		}
+		return adder, adderip, client, timestamp, id, nil
+	}
+	return "", "", "", 0, 0, fmt.Errorf("No data found")
 }
 
 // CheckAuthToken checks if the given auth token is valid for the given user.

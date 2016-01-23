@@ -11,6 +11,7 @@ import (
 type Configuration struct {
 	ImageLocation string    `json:"image-location"`
 	Favicon       string    `json:"favicon"`
+	DateFormat    string    `json:"date-format"`
 	TrustHeaders  bool      `json:"trust-headers"`
 	RequireAuth   bool      `json:"require-authentication"`
 	IP            string    `json:"ip"`
