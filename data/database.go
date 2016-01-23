@@ -34,9 +34,10 @@ func LoadDatabase(conf SQLConfig) error {
 	}
 	_, err = database.Query("CREATE TABLE IF NOT EXISTS images (" +
 		"imgname VARCHAR(32) PRIMARY KEY," +
+		"format VARCHAR(16)," +
 		"adder VARCHAR(16) NOT NULL," +
 		"adderip VARCHAR(64) NOT NULL," +
-		"client VARCHAR(127) NOT NULL," +
+		"client VARCHAR(64) NOT NULL," +
 		"timestamp BIGINT NOT NULL," +
 		"id MEDIUMINT UNIQUE KEY AUTO_INCREMENT" +
 		");")
@@ -77,34 +78,39 @@ func Remove(imageName string) error {
 }
 
 // Insert inserts the given image name and marks it owned by the given username.
-func Insert(imageName, adder, adderip, client string) error {
-	_, err := database.Query("INSERT INTO images (imgname, adder, adderip, client, timestamp) VALUES (?, ?, ?, ?, ?);", imageName, adder, adderip, client, time.Now().Unix())
+func Insert(imageName, imageFormat, adder, adderip, client string) error {
+	_, err := database.Query("INSERT INTO images (imgname, format, adder, adderip, client, timestamp) VALUES (?, ?, ?, ?, ?);", imageName, imageFormat, adder, adderip, client, time.Now().Unix())
+	return err
+}
+
+// Update updates the image with the given name giving it the given information.
+func Update(imageName, imageFormat, adderip, client string) error {
+	_, err := database.Query("UPDATE images SET format=?,adderip=?,client=?,timestamp=? WHERE imgname=?", imageFormat, adderip, client, time.Now().Unix(), imageName)
 	return err
 }
 
 // Query for basic details of the given image.
-func Query(imageName string) (string, string, string, int64, int, error) {
-	result, err := database.Query("SELECT adder, adderip, client, timestamp, id FROM images WHERE imgname=?", imageName)
+func Query(imageName string) (string, string, string, string, int64, int, error) {
+	result, err := database.Query("SELECT format, adder, adderip, client, timestamp, id FROM images WHERE imgname=?", imageName)
 	if err != nil {
-		return "", "", "", 0, 0, err
+		return "", "", "", "", 0, 0, err
 	}
 	for result.Next() {
 		if result.Err() != nil {
-			return "", "", "", 0, 0, result.Err()
+			return "", "", "", "", 0, 0, result.Err()
 		}
-		var adder, adderip, client string
+		var format, adder, adderip, client string
 		var timestamp int64
 		var id int
-		err = result.Scan(&adder, &adderip, &client, &timestamp, &id)
+		err = result.Scan(&format, &adder, &adderip, &client, &timestamp, &id)
 		if err != nil {
-			return "", "", "", 0, 0, err
+			return "", "", "", "", 0, 0, err
 		} else if len(adder) == 0 || len(adderip) == 0 || len(client) == 0 || timestamp < 1 || id < 1 {
-			println(adder, adderip, client, timestamp, id)
-			return adder, adderip, client, timestamp, id, fmt.Errorf("Invalid data")
+			return format, adder, adderip, client, timestamp, id, fmt.Errorf("Invalid data")
 		}
-		return adder, adderip, client, timestamp, id, nil
+		return format, adder, adderip, client, timestamp, id, nil
 	}
-	return "", "", "", 0, 0, fmt.Errorf("No data found")
+	return "", "", "", "", 0, 0, fmt.Errorf("No data found")
 }
 
 // CheckAuthToken checks if the given auth token is valid for the given user.

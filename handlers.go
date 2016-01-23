@@ -16,11 +16,12 @@ import (
 
 // InsertForm is the form for inserting images into the system. Requirement of AuthToken is configurable.
 type InsertForm struct {
-	Image     string `json:"image"`
-	ImageName string `json:"image-name"`
-	Client    string `json:"client-name"`
-	Username  string `json:"username"`
-	AuthToken string `json:"auth-token"`
+	Image       string `json:"image"`
+	ImageName   string `json:"image-name"`
+	ImageFormat string `json:"image-format"`
+	Client      string `json:"client-name"`
+	Username    string `json:"username"`
+	AuthToken   string `json:"auth-token"`
 }
 
 // DeleteForm is the form for deleting images. AuthToken is required.
@@ -53,10 +54,10 @@ func get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	adder, _, client, timestamp, index, err := data.Query(path)
+	format, adder, _, client, timestamp, index, err := data.Query(path)
 	if err == nil {
 		date := time.Unix(timestamp, 0).Format(config.DateFormat)
-		r.URL.Path = r.URL.Path + ".png"
+		r.URL.Path = r.URL.Path + "." + format
 		image.Execute(w, imageTemplate{
 			ImageName: path,
 			ImageAddr: r.URL.String(),
@@ -157,9 +158,12 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	if len(ifr.Client) == 0 {
 		ifr.Client = "Unknown Client"
 	}
+	if len(ifr.ImageFormat) == 0 {
+		ifr.ImageFormat = "png"
+	}
 
 	if !replace {
-		err = data.Insert(imageName, ifr.Username, ip, ifr.Client)
+		err = data.Insert(imageName, ifr.ImageFormat, ifr.Username, ip, ifr.Client)
 		if err != nil {
 			log.Errorf("Error while inserting image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -174,6 +178,12 @@ func insert(w http.ResponseWriter, r *http.Request) {
 			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
 		}
 	} else {
+		err = data.Update(imageName, ifr.ImageFormat, ip, ifr.Client)
+		if err != nil {
+			log.Errorf("Error while updating data of image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (replaced).", ifr.Username, ip, imageName)
 		if !output(w, InsertResponse{
 			Success: true,
