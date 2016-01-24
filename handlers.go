@@ -109,6 +109,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Fill out all non-necessary unfilled values.
 	if len(ifr.ImageName) == 0 {
 		ifr.ImageName = random.ImageName(5)
 	}
@@ -120,7 +121,9 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(ifr.Username) == 0 || len(ifr.AuthToken) == 0 {
+		// Username or authentication token not supplied.
 		if config.RequireAuth {
+			// The user is not logged in, but the config is set to require authentication, send error.
 			if !output(w, InsertResponse{
 				Success:        false,
 				Status:         "not-logged-in",
@@ -129,11 +132,12 @@ func insert(w http.ResponseWriter, r *http.Request) {
 				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
 			}
 		} else {
+			// The user is not logged in, but login is not required, set username to "anonymous"
 			ifr.Username = "anonymous"
 		}
 	} else {
+		// Username and authentication token supplied, check them.
 		err = data.CheckAuthToken(ifr.Username, []byte(ifr.AuthToken))
-		// Check if the auth token was correct
 		if err != nil {
 			log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, ifr.Username)
 			if !output(w, InsertResponse{
@@ -147,6 +151,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// If the image already exists, make sure that the uploader is the owner of the image.
 	var replace = false
 	owner := data.GetOwner(ifr.ImageName)
 	if len(owner) > 0 {
@@ -158,6 +163,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		replace = true
 	}
 
+	// Decode the base64 image from the JSON request.
 	image, err := base64.StdEncoding.DecodeString(ifr.Image)
 	if err != nil {
 		log.Errorf("Error while decoding image from %[1]s@%[2]s: %[3]s", ifr.Username, ip, err)
@@ -165,6 +171,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Write the image to disk.
 	err = ioutil.WriteFile(config.ImageLocation+"/"+ifr.ImageName+"."+ifr.ImageFormat, image, 0644)
 	if err != nil {
 		log.Errorf("Error while saving image from %[1]s@%[2]s: %[3]s", ifr.Username, ip, err)
@@ -173,6 +180,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !replace {
+		// The image name has not been used. Insert it into the database.
 		err = data.Insert(ifr.ImageName, ifr.ImageFormat, ifr.Username, ip, ifr.Client)
 		if err != nil {
 			log.Errorf("Error while inserting image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
@@ -188,6 +196,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
 		}
 	} else {
+		// The image name was in use. Update the data in the database.
 		err = data.Update(ifr.ImageName, ifr.ImageFormat, ip, ifr.Client)
 		if err != nil {
 			log.Errorf("Error while updating data of image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
