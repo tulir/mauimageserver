@@ -44,12 +44,21 @@ func loadConfig() {
 func loadDatabase() {
 	log.Infof("Loading database...")
 
-	var err error
-	err = data.LoadDatabase(config.SQL)
+	err := data.LoadDatabase(config.SQL)
 	if err != nil {
 		log.Fatalf("Failed to load database: %[1]s", err)
 		os.Exit(2)
 	}
 
 	log.Debugln("Successfully loaded database.")
+}
+
+func loadTemplates() {
+	log.Infof("Loading HTML templates...")
+	err := data.LoadTemplates()
+	if err != nil {
+		log.Fatalf("Failed to load image page: %s", err)
+		os.Exit(3)
+	}
+	log.Debugln("Successfully loaded HTML templates")
 }

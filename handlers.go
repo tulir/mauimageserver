@@ -58,14 +58,14 @@ func get(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		date := time.Unix(timestamp, 0).Format(config.DateFormat)
 		r.URL.Path = r.URL.Path + "." + format
-		image.Execute(w, imageTemplate{
+		data.ImagePage{
 			ImageName: path,
 			ImageAddr: r.URL.String(),
 			Uploader:  adder,
 			Client:    client,
 			Date:      date,
 			Index:     strconv.Itoa(index),
-		})
+		}.Send(w)
 		return
 	}
 

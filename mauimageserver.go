@@ -47,8 +47,8 @@ func main() {
 
 	log.Infof("Initializing mauImageServer")
 	loadConfig()
-	loadTemplates()
 	loadDatabase()
+	loadTemplates()
 
 	log.Debugln("Loading favicon...")
 	favicon, _ = ioutil.ReadFile(config.Favicon)
