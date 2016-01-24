@@ -15,6 +15,8 @@ import (
 	"syscall"
 )
 
+const version = "2.0.0-B1"
+
 var debug = flag.BoolP("debug", "d", false, "Enable to print debug messages to stdout")
 var confPath = flag.StringP("config", "c", "./config.json", "The path of the mauImageServer configuration file.")
 var disableSafeShutdown = flag.Bool("no-safe-shutdown", false, "Disable Interrupt/SIGTERM catching and handling.")
@@ -45,7 +47,7 @@ func main() {
 	// Initialize the logger
 	log.Init()
 
-	log.Infof("Initializing mauImageServer")
+	log.Infof("Initializing mauImageServer " + version)
 	loadConfig()
 	loadDatabase()
 	loadTemplates()
