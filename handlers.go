@@ -109,9 +109,14 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imageName := ifr.ImageName
-	if len(imageName) == 0 {
-		imageName = random.ImageName(5)
+	if len(ifr.ImageName) == 0 {
+		ifr.ImageName = random.ImageName(5)
+	}
+	if len(ifr.ImageFormat) == 0 {
+		ifr.ImageFormat = "png"
+	}
+	if len(ifr.Client) == 0 {
+		ifr.Client = "Unknown Client"
 	}
 
 	if len(ifr.Username) == 0 || len(ifr.AuthToken) == 0 {
@@ -143,7 +148,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var replace = false
-	owner := data.GetOwner(imageName)
+	owner := data.GetOwner(ifr.ImageName)
 	if len(owner) > 0 {
 		if owner != ifr.Username || ifr.Username == "anonymous" {
 			output(w, InsertResponse{Success: false, Status: "already-exists", StatusReadable: "The requested image name is already in use by another user"}, http.StatusForbidden)
@@ -159,47 +164,41 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	err = ioutil.WriteFile(config.ImageLocation+"/"+imageName+".png", image, 0644)
+
+	err = ioutil.WriteFile(config.ImageLocation+"/"+ifr.ImageName+"."+ifr.ImageFormat, image, 0644)
 	if err != nil {
 		log.Errorf("Error while saving image from %[1]s@%[2]s: %[3]s", ifr.Username, ip, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if len(ifr.Client) == 0 {
-		ifr.Client = "Unknown Client"
-	}
-	if len(ifr.ImageFormat) == 0 {
-		ifr.ImageFormat = "png"
-	}
-
 	if !replace {
-		err = data.Insert(imageName, ifr.ImageFormat, ifr.Username, ip, ifr.Client)
+		err = data.Insert(ifr.ImageName, ifr.ImageFormat, ifr.Username, ip, ifr.Client)
 		if err != nil {
 			log.Errorf("Error while inserting image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (new).", ifr.Username, ip, imageName)
+		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (new).", ifr.Username, ip, ifr.ImageName)
 		if !output(w, InsertResponse{
 			Success:        true,
 			Status:         "created",
-			StatusReadable: "The image was successfully saved with the name " + imageName,
+			StatusReadable: "The image was successfully saved with the name " + ifr.ImageName,
 		}, http.StatusCreated) {
 			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
 		}
 	} else {
-		err = data.Update(imageName, ifr.ImageFormat, ip, ifr.Client)
+		err = data.Update(ifr.ImageName, ifr.ImageFormat, ip, ifr.Client)
 		if err != nil {
 			log.Errorf("Error while updating data of image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (replaced).", ifr.Username, ip, imageName)
+		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (replaced).", ifr.Username, ip, ifr.ImageName)
 		if !output(w, InsertResponse{
 			Success: true,
 			Status:  "replaced",
-			StatusReadable: "The image was successfully saved with the name " + imageName +
+			StatusReadable: "The image was successfully saved with the name " + ifr.ImageName +
 				", replacing your previous image with the same name",
 		}, http.StatusAccepted) {
 			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
