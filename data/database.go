@@ -79,7 +79,7 @@ func Remove(imageName string) error {
 
 // Insert inserts the given image name and marks it owned by the given username.
 func Insert(imageName, imageFormat, adder, adderip, client string) error {
-	_, err := database.Query("INSERT INTO images (imgname, format, adder, adderip, client, timestamp) VALUES (?, ?, ?, ?, ?);", imageName, imageFormat, adder, adderip, client, time.Now().Unix())
+	_, err := database.Query("INSERT INTO images (imgname, format, adder, adderip, client, timestamp) VALUES (?, ?, ?, ?, ?, ?);", imageName, imageFormat, adder, adderip, client, time.Now().Unix())
 	return err
 }
 
