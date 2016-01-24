@@ -76,17 +76,6 @@ func get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusFound)
-
-	split := strings.Split(path, ".")
-	if len(split) > 0 {
-		format, _, _, _, _, _, err = data.Query(split[0])
-		if err == nil && len(format) > 0 {
-			w.Header().Set("Content-type", "image/"+format)
-		} else if len(split) > 1 {
-			w.Header().Set("Content-type", "image/"+split[len(split)-1])
-		}
-	}
-
 	w.Write(imgData)
 }
 
