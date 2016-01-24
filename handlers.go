@@ -71,7 +71,7 @@ func get(w http.ResponseWriter, r *http.Request) {
 
 	data, err := ioutil.ReadFile(config.ImageLocation + r.URL.Path)
 	if err != nil {
-		log.Errorf("%[1]s tried to get the non-existent image %[2]s", getIP(r), path)
+		log.Errorf("Failed to read image at %[2]s requested by %[1]s: %[3]s", getIP(r), path, err)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
