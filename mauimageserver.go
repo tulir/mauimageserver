@@ -5,7 +5,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 	flag "github.com/ogier/pflag"
-	"io/ioutil"
 	"maunium.net/go/mauimageserver/data"
 	log "maunium.net/go/maulogger"
 	"net/http"
@@ -51,9 +50,6 @@ func main() {
 	loadConfig()
 	loadDatabase()
 	loadTemplates()
-
-	log.Debugln("Loading favicon...")
-	favicon, _ = ioutil.ReadFile(config.Favicon)
 
 	log.Infof("Registering handlers")
 	http.HandleFunc("/auth/login", login)

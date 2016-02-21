@@ -46,14 +46,6 @@ func get(w http.ResponseWriter, r *http.Request) {
 	}
 	path := r.URL.Path[1:]
 
-	if path == "" || path == "index.html" || path == "index.php" || path == "index" || path == "index.htm" {
-		// TODO: Index page?
-	} else if path == "favicon.ico" {
-		w.WriteHeader(http.StatusFound)
-		w.Write(favicon)
-		return
-	}
-
 	format, adder, _, client, timestamp, index, err := data.Query(path)
 	if err == nil {
 		date := time.Unix(timestamp, 0).Format(config.DateFormat)
