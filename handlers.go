@@ -46,17 +46,17 @@ func get(w http.ResponseWriter, r *http.Request) {
 	}
 	path := r.URL.Path[1:]
 
-	format, adder, _, client, timestamp, index, err := data.Query(path)
+	img, err := data.Query(path)
 	if err == nil {
-		date := time.Unix(timestamp, 0).Format(config.DateFormat)
-		r.URL.Path = r.URL.Path + "." + format
+		date := time.Unix(img.Timestamp, 0).Format(config.DateFormat)
+		r.URL.Path = r.URL.Path + "." + img.Format
 		data.ImagePage{
-			ImageName: path,
+			ImageName: img.ImageName,
 			ImageAddr: r.URL.String(),
-			Uploader:  adder,
-			Client:    client,
+			Uploader:  img.Adder,
+			Client:    img.Client,
 			Date:      date,
-			Index:     strconv.Itoa(index),
+			Index:     strconv.Itoa(img.ID),
 		}.Send(w)
 		return
 	}
@@ -71,9 +71,9 @@ func get(w http.ResponseWriter, r *http.Request) {
 
 	split := strings.Split(path, ".")
 	if len(split) > 0 {
-		format, _, _, _, _, _, err = data.Query(split[0])
-		if err == nil && len(format) > 0 {
-			w.Header().Set("Content-type", "image/"+format)
+		img, err = data.Query(split[0])
+		if err == nil && len(img.Format) > 0 {
+			w.Header().Set("Content-type", "image/"+img.Format)
 		} else if len(split) > 1 {
 			w.Header().Set("Content-type", "image/"+split[len(split)-1])
 		}

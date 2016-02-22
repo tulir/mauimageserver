@@ -190,27 +190,27 @@ func Update(imageName, imageFormat, adderip, client string) error {
 }
 
 // Query for basic details of the given image.
-func Query(imageName string) (string, string, string, string, int64, int, error) {
+func Query(imageName string) (ImageEntry, error) {
 	result, err := database.Query("SELECT format, adder, adderip, client, timestamp, id FROM images WHERE imgname=?", imageName)
 	if err != nil {
-		return "", "", "", "", 0, 0, err
+		return ImageEntry{}, err
 	}
 	for result.Next() {
 		if result.Err() != nil {
-			return "", "", "", "", 0, 0, result.Err()
+			return ImageEntry{}, result.Err()
 		}
 		var format, adder, adderip, client string
 		var timestamp int64
 		var id int
 		err = result.Scan(&format, &adder, &adderip, &client, &timestamp, &id)
 		if err != nil {
-			return "", "", "", "", 0, 0, err
+			return ImageEntry{}, err
 		} else if len(adder) == 0 || len(adderip) == 0 || len(client) == 0 || timestamp < 1 || id < 1 {
-			return format, adder, adderip, client, timestamp, id, fmt.Errorf("Invalid data")
+			return ImageEntry{ImageName: imageName, Format: format, Adder: adder, AdderIP: adderip, Client: client, Timestamp: timestamp, ID: id}, fmt.Errorf("Invalid data")
 		}
-		return format, adder, adderip, client, timestamp, id, nil
+		return ImageEntry{ImageName: imageName, Format: format, Adder: adder, AdderIP: adderip, Client: client, Timestamp: timestamp, ID: id}, nil
 	}
-	return "", "", "", "", 0, 0, fmt.Errorf("No data found")
+	return ImageEntry{}, fmt.Errorf("No data found")
 }
 
 // CheckAuthToken checks if the given auth token is valid for the given user.
