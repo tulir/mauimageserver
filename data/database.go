@@ -12,10 +12,10 @@ import (
 // ImageEntry is an image entry.
 type ImageEntry struct {
 	ImageName string `json:"image-name"`
-	Format    string `json:"format,omitempty"`
+	Format    string `json:"image-format,omitempty"`
 	Adder     string `json:"adder,omitempty"`
 	AdderIP   string `json:"adder-ip,omitempty"`
-	Client    string `json:"client,omitempty"`
+	Client    string `json:"client-name,omitempty"`
 	Timestamp int64  `json:"timestamp,omitempty"`
 	ID        int    `json:"id,omitempty"`
 }
