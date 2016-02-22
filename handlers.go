@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"maunium.net/go/mauimageserver/data"
 	"maunium.net/go/mauimageserver/random"
@@ -40,6 +41,11 @@ type SearchForm struct {
 	MaxTime  int64  `json:"uploaded-before"`
 }
 
+// String turns a SearchForm into a string
+func (sf SearchForm) String() string {
+	return fmt.Sprintf("<%[1]s|%[2]s|%[3]s|%[4]d|%[5]d>", sf.Format, sf.Uploader, sf.Client, sf.MinTime, sf.MaxTime)
+}
+
 // InsertResponse is the response for an insert call.
 type InsertResponse struct {
 	Success        bool   `json:"success"`
@@ -55,6 +61,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !config.AllowSearch {
+		log.Warnf("%[1]s attempted to execute a search, even though it's not allowed", ip)
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
@@ -70,7 +77,14 @@ func search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results := data.Search(sf.Format, sf.Uploader, sf.Client, sf.MinTime, sf.MaxTime)
+	results, err := data.Search(sf.Format, sf.Uploader, sf.Client, sf.MinTime, sf.MaxTime)
+	if err != nil {
+		log.Errorf("Failed to execute search %[2]s by %[1]s: %[3]s", ip, sf.String(), err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.Debugf("%[1]s executed a search: %s", ip, sf.String())
 	if !output(w, results, http.StatusOK) {
 		log.Errorf("Failed to marshal output json to %[1]s: %[2]s", ip, err)
 	}
