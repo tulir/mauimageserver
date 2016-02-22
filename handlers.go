@@ -40,11 +40,6 @@ type SearchForm struct {
 	MaxTime  int64  `json:"uploaded-before"`
 }
 
-// SearchResponse is the response to a search query.
-type SearchResponse struct {
-	Results []data.ImageEntry `json:"results"`
-}
-
 // InsertResponse is the response for an insert call.
 type InsertResponse struct {
 	Success        bool   `json:"success"`
@@ -53,7 +48,28 @@ type InsertResponse struct {
 }
 
 func search(w http.ResponseWriter, r *http.Request) {
-	// TODO search implementation
+	var ip = getIP(r)
+	if r.Method != "POST" {
+		w.Header().Add("Allow", "POST")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	// Create a json decoder for the payload.
+	decoder := json.NewDecoder(r.Body)
+	var sf SearchForm
+	// Decode the payload.
+	err := decoder.Decode(&sf)
+	// Check if there was an error decoding.
+	if err != nil || (len(sf.Format) == 0 && len(sf.Uploader) == 0 && len(sf.Client) == 0 && (sf.MinTime <= 0 || sf.MaxTime <= 0)) {
+		log.Debugf("%[1]s sent an invalid insert request.", ip)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	results := data.Search(sf.Format, sf.Uploader, sf.Client, sf.MinTime, sf.MaxTime)
+	if !output(w, results, http.StatusOK) {
+		log.Errorf("Failed to marshal output json to %[1]s: %[2]s", ip, err)
+	}
 }
 
 func get(w http.ResponseWriter, r *http.Request) {
