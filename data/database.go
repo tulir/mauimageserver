@@ -28,8 +28,8 @@ func LoadDatabase(conf SQLConfig) error {
 	sqlType := strings.ToLower(conf.Type)
 	if sqlType == "mysql" {
 		database, err = sql.Open("mysql", fmt.Sprintf("%[1]s@%[2]s/%[3]s", conf.Authentication.ToString(), conf.Connection.ToString(), conf.Database))
-	} else if sqlType == "sqlite" {
-		database, err = sql.Open("sqlite3", fmt.Sprintf("%[1]s", conf.Database))
+		//} else if sqlType == "sqlite" {
+		//	database, err = sql.Open("sqlite3", fmt.Sprintf("%[1]s", conf.Database))
 	} else {
 		return fmt.Errorf("%[1]s is not yet supported", conf.Type)
 	}

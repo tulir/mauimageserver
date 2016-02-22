@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/mattn/go-sqlite3"
 	flag "github.com/ogier/pflag"
 	"maunium.net/go/mauimageserver/data"
 	log "maunium.net/go/maulogger"
