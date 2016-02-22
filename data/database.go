@@ -9,6 +9,17 @@ import (
 	"time"
 )
 
+// ImageEntry is an image entry.
+type ImageEntry struct {
+	ImageName string `json:"image-name"`
+	Format    string `json:"format,omitempty"`
+	Adder     string `json:"adder,omitempty"`
+	AdderIP   string `json:"adder-ip,omitempty"`
+	Client    string `json:"client,omitempty"`
+	Timestamp int64  `json:"timestamp,omitempty"`
+	ID        int    `json:"id,omitempty"`
+}
+
 var database *sql.DB
 
 // LoadDatabase loads the database based on the given configuration.
@@ -70,6 +81,95 @@ func GetOwner(imageName string) string {
 	}
 	return ""
 }
+
+// Search searches the database with the given arguments.
+func Search(format, adder, client string, timeMin, timeMax int64) []ImageEntry {
+	var result *sql.Rows
+	var err error
+	if len(format) == 0 {
+		if len(adder) == 0 {
+			if len(client) == 0 {
+				if timeMin == 0 || timeMax == 0 {
+					result, err = database.Query("SELECT * FROM images;")
+				} else {
+					result, err = database.Query("SELECT * FROM images WHERE timestamp BETWEEN ? AND ?;", timeMin, timeMax)
+				}
+			} else {
+				if timeMin == 0 || timeMax == 0 {
+					result, err = database.Query("SELECT * FROM images WHERE client=?;", client)
+				} else {
+					result, err = database.Query("SELECT * FROM images WHERE client=? AND (timestamp BETWEEN ? AND ?);", client, timeMin, timeMax)
+				}
+			}
+		} else {
+			if len(client) == 0 {
+				if timeMin == 0 || timeMax == 0 {
+					result, err = database.Query("SELECT * FROM images WHERE adder=?;", adder)
+				} else {
+					result, err = database.Query("SELECT * FROM images WHERE adder=? AND (timestamp BETWEEN ? AND ?);", adder, timeMin, timeMax)
+				}
+			} else {
+				if timeMin == 0 || timeMax == 0 {
+					result, err = database.Query("SELECT * FROM images WHERE adder=? AND client=?;", adder, client)
+				} else {
+					result, err = database.Query("SELECT * FROM images WHERE adder=? AND client=? AND (timestamp BETWEEN ? AND ?);", adder, client, timeMin, timeMax)
+				}
+			}
+		}
+	} else {
+		if len(adder) == 0 {
+			if len(client) == 0 {
+				if timeMin == 0 || timeMax == 0 {
+					result, err = database.Query("SELECT * FROM images WHERE format=?;", format)
+				} else {
+					result, err = database.Query("SELECT * FROM images WHERE format=? AND (timestamp BETWEEN ? AND ?);", format, timeMin, timeMax)
+				}
+			} else {
+				if timeMin == 0 || timeMax == 0 {
+					result, err = database.Query("SELECT * FROM images WHERE format=? AND client=?;", format, client)
+				} else {
+					result, err = database.Query("SELECT * FROM images WHERE format=? AND client=? AND (timestamp BETWEEN ? AND ?);", format, client, timeMin, timeMax)
+				}
+			}
+		} else {
+			if len(client) == 0 {
+				if timeMin == 0 || timeMax == 0 {
+					result, err = database.Query("SELECT * FROM images WHERE format=? AND adder=?;", format, adder)
+				} else {
+					result, err = database.Query("SELECT * FROM images WHERE format=? AND adder=? AND (timestamp BETWEEN ? AND ?);", format, adder, timeMin, timeMax)
+				}
+			} else {
+				if timeMin == 0 || timeMax == 0 {
+					result, err = database.Query("SELECT * FROM images WHERE format=? AND adder=? AND client=?;", format, adder, client)
+				} else {
+					result, err = database.Query("SELECT * FROM images WHERE format=? AND adder=? AND client=? AND (timestamp BETWEEN ? AND ?);", format, adder, client, timeMin, timeMax)
+				}
+			}
+		}
+	}
+	var results []ImageEntry
+	if err != nil {
+		return results
+	}
+	for result.Next() {
+		if result.Err() != nil {
+			continue
+		}
+		var imageName, format, adder, adderip, client string
+		var timestamp int64
+		var id int
+
+		err = result.Scan(&imageName, &format, &adder, &adderip, &client, &timestamp, &id)
+		if err != nil {
+			continue
+		}
+
+		results = append(results, ImageEntry{ImageName: imageName, Format: format, Adder: adder, Client: client, Timestamp: timestamp, ID: id})
+	}
+	return results
+}
+
+// SELECT * FROM images WHERE timestamp BETWEEN ? AND ?
 
 // Remove removes the image with the given name.
 func Remove(imageName string) error {
