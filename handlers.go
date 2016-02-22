@@ -54,6 +54,10 @@ func search(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	if !config.AllowSearch {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
 	// Create a json decoder for the payload.
 	decoder := json.NewDecoder(r.Body)
 	var sf SearchForm
