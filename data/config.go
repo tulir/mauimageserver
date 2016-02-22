@@ -12,6 +12,7 @@ type Configuration struct {
 	ImageLocation string    `json:"image-location"`
 	DateFormat    string    `json:"date-format"`
 	TrustHeaders  bool      `json:"trust-headers"`
+	AllowSearch   bool      `json:"allow-search"`
 	RequireAuth   bool      `json:"require-authentication"`
 	IP            string    `json:"ip"`
 	Port          int       `json:"port"`

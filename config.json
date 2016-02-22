@@ -4,6 +4,7 @@
     "date-format": "15:04:05 02.01.2006 MST",
     "require-auth": true,
     "trust-headers": false,
+    "allow-search": true,
     "ip": "127.0.0.1",
     "port": 29300,
     "sql": {
