@@ -95,24 +95,27 @@ func Search(format, adder, client string, timeMin, timeMax int64) []ImageEntry {
 					result, err = database.Query("SELECT * FROM images WHERE timestamp BETWEEN ? AND ?;", timeMin, timeMax)
 				}
 			} else {
+				client = "%{" + client + "}%"
 				if timeMin <= 0 || timeMax <= 0 {
-					result, err = database.Query("SELECT * FROM images WHERE client=?;", client)
+					result, err = database.Query("SELECT * FROM images WHERE (client LIKE ?);", client)
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE client=? AND (timestamp BETWEEN ? AND ?);", client, timeMin, timeMax)
+					result, err = database.Query("SELECT * FROM images WHERE (client LIKE ?) AND (timestamp BETWEEN ? AND ?);", client, timeMin, timeMax)
 				}
 			}
 		} else {
+			adder = "%{" + adder + "}%"
 			if len(client) == 0 {
+				client = "%{" + client + "}%"
 				if timeMin <= 0 || timeMax <= 0 {
-					result, err = database.Query("SELECT * FROM images WHERE adder=?;", adder)
+					result, err = database.Query("SELECT * FROM images WHERE (adder LIKE ?);", adder)
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE adder=? AND (timestamp BETWEEN ? AND ?);", adder, timeMin, timeMax)
+					result, err = database.Query("SELECT * FROM images WHERE (adder LIKE ?) AND (timestamp BETWEEN ? AND ?);", adder, timeMin, timeMax)
 				}
 			} else {
 				if timeMin <= 0 || timeMax <= 0 {
-					result, err = database.Query("SELECT * FROM images WHERE adder=? AND client=?;", adder, client)
+					result, err = database.Query("SELECT * FROM images WHERE (adder LIKE ?) AND (client LIKE ?);", adder, client)
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE adder=? AND client=? AND (timestamp BETWEEN ? AND ?);", adder, client, timeMin, timeMax)
+					result, err = database.Query("SELECT * FROM images WHERE (adder LIKE ?) AND (client LIKE ?) AND (timestamp BETWEEN ? AND ?);", adder, client, timeMin, timeMax)
 				}
 			}
 		}
