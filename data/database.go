@@ -83,7 +83,7 @@ func GetOwner(imageName string) string {
 }
 
 // Search searches the database with the given arguments.
-func Search(format, adder, client string, timeMin, timeMax int64) []ImageEntry {
+func Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry, error) {
 	var result *sql.Rows
 	var err error
 	if len(format) == 0 {
@@ -95,7 +95,7 @@ func Search(format, adder, client string, timeMin, timeMax int64) []ImageEntry {
 					result, err = database.Query("SELECT * FROM images WHERE timestamp BETWEEN ? AND ?;", timeMin, timeMax)
 				}
 			} else {
-				client = "%{" + client + "}%"
+				client = "%" + client + "%"
 				if timeMin <= 0 || timeMax <= 0 {
 					result, err = database.Query("SELECT * FROM images WHERE (client LIKE ?);", client)
 				} else {
@@ -103,15 +103,15 @@ func Search(format, adder, client string, timeMin, timeMax int64) []ImageEntry {
 				}
 			}
 		} else {
-			adder = "%{" + adder + "}%"
+			adder = "%" + adder + "%"
 			if len(client) == 0 {
-				client = "%{" + client + "}%"
 				if timeMin <= 0 || timeMax <= 0 {
 					result, err = database.Query("SELECT * FROM images WHERE (adder LIKE ?);", adder)
 				} else {
 					result, err = database.Query("SELECT * FROM images WHERE (adder LIKE ?) AND (timestamp BETWEEN ? AND ?);", adder, timeMin, timeMax)
 				}
 			} else {
+				client = "%" + client + "%"
 				if timeMin <= 0 || timeMax <= 0 {
 					result, err = database.Query("SELECT * FROM images WHERE (adder LIKE ?) AND (client LIKE ?);", adder, client)
 				} else {
@@ -128,31 +128,34 @@ func Search(format, adder, client string, timeMin, timeMax int64) []ImageEntry {
 					result, err = database.Query("SELECT * FROM images WHERE format=? AND (timestamp BETWEEN ? AND ?);", format, timeMin, timeMax)
 				}
 			} else {
+				client = "%" + client + "%"
 				if timeMin == 0 || timeMax == 0 {
-					result, err = database.Query("SELECT * FROM images WHERE format=? AND client=?;", format, client)
+					result, err = database.Query("SELECT * FROM images WHERE format=? AND (client LIKE ?);", format, client)
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE format=? AND client=? AND (timestamp BETWEEN ? AND ?);", format, client, timeMin, timeMax)
+					result, err = database.Query("SELECT * FROM images WHERE format=? AND (client LIKE ?) AND (timestamp BETWEEN ? AND ?);", format, client, timeMin, timeMax)
 				}
 			}
 		} else {
+			adder = "%" + adder + "%"
 			if len(client) == 0 {
 				if timeMin == 0 || timeMax == 0 {
-					result, err = database.Query("SELECT * FROM images WHERE format=? AND adder=?;", format, adder)
+					result, err = database.Query("SELECT * FROM images WHERE format=? AND (adder LIKE ?);", format, adder)
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE format=? AND adder=? AND (timestamp BETWEEN ? AND ?);", format, adder, timeMin, timeMax)
+					result, err = database.Query("SELECT * FROM images WHERE format=? AND (adder LIKE ?) AND (timestamp BETWEEN ? AND ?);", format, adder, timeMin, timeMax)
 				}
 			} else {
+				client = "%" + client + "%"
 				if timeMin == 0 || timeMax == 0 {
-					result, err = database.Query("SELECT * FROM images WHERE format=? AND adder=? AND client=?;", format, adder, client)
+					result, err = database.Query("SELECT * FROM images WHERE format=? AND (adder LIKE ?) AND (client LIKE ?);", format, adder, client)
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE format=? AND adder=? AND client=? AND (timestamp BETWEEN ? AND ?);", format, adder, client, timeMin, timeMax)
+					result, err = database.Query("SELECT * FROM images WHERE format=? AND (adder LIKE ?) AND (client LIKE ?) AND (timestamp BETWEEN ? AND ?);", format, adder, client, timeMin, timeMax)
 				}
 			}
 		}
 	}
 	var results []ImageEntry
 	if err != nil {
-		return results
+		return results, err
 	}
 	for result.Next() {
 		if result.Err() != nil {
@@ -169,7 +172,7 @@ func Search(format, adder, client string, timeMin, timeMax int64) []ImageEntry {
 
 		results = append(results, ImageEntry{ImageName: imageName, Format: format, Adder: adder, Client: client, Timestamp: timestamp, ID: id})
 	}
-	return results
+	return results, nil
 }
 
 // SELECT * FROM images WHERE timestamp BETWEEN ? AND ?
