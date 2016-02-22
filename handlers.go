@@ -71,10 +71,16 @@ func search(w http.ResponseWriter, r *http.Request) {
 	// Decode the payload.
 	err := decoder.Decode(&sf)
 	// Check if there was an error decoding.
-	if err != nil || (len(sf.Format) == 0 && len(sf.Uploader) == 0 && len(sf.Client) == 0 && (sf.MinTime <= 0 || sf.MaxTime <= 0)) {
-		log.Debugf("%[1]s sent an invalid insert request.", ip)
+	if err != nil || (len(sf.Format) == 0 && len(sf.Uploader) == 0 && len(sf.Client) == 0 && sf.MinTime <= 0 && sf.MaxTime <= 0) {
+		log.Debugf("%[1]s sent an invalid search request.", ip)
 		w.WriteHeader(http.StatusBadRequest)
 		return
+	}
+
+	if sf.MinTime <= 0 && sf.MaxTime > 0 {
+		sf.MinTime = 1
+	} else if sf.MinTime > 0 && sf.MaxTime <= 0 {
+		sf.MaxTime = time.Now().Unix()
 	}
 
 	results, err := data.Search(sf.Format, sf.Uploader, sf.Client, sf.MinTime, sf.MaxTime)
