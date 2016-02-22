@@ -31,11 +31,29 @@ type DeleteForm struct {
 	AuthToken string `json:"auth-token"`
 }
 
+// SearchForm is the form for searching for images.
+type SearchForm struct {
+	Format   string `json:"image-format"`
+	Uploader string `json:"uploader"`
+	Client   string `json:"client-name"`
+	MinTime  int64  `json:"uploaded-after"`
+	MaxTime  int64  `json:"uploaded-before"`
+}
+
+// SearchResponse is the response to a search query.
+type SearchResponse struct {
+	Results []data.ImageEntry `json:"results"`
+}
+
 // InsertResponse is the response for an insert call.
 type InsertResponse struct {
 	Success        bool   `json:"success"`
 	Status         string `json:"status-simple"`
 	StatusReadable string `json:"status-humanreadable"`
+}
+
+func search(w http.ResponseWriter, r *http.Request) {
+	// TODO search implementation
 }
 
 func get(w http.ResponseWriter, r *http.Request) {

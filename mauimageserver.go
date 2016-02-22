@@ -56,6 +56,7 @@ func main() {
 	http.HandleFunc("/auth/register", register)
 	http.HandleFunc("/insert", insert)
 	http.HandleFunc("/delete", delete)
+	http.HandleFunc("/search", search)
 	http.HandleFunc("/", get)
 	log.Infof("Listening on %s:%d", config.IP, config.Port)
 	http.ListenAndServe(config.IP+":"+strconv.Itoa(config.Port), nil)
