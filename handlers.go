@@ -337,7 +337,7 @@ func hide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = data.Remove(hfr.ImageName)
+	err = data.SetHidden(hfr.ImageName, hfr.Hidden)
 	if err != nil {
 		log.Warnf("Error changing hide status of %[4]s (requested by %[1]s@%[2]s): %[3]s", hfr.Username, ip, err, hfr.ImageName)
 		w.WriteHeader(http.StatusInternalServerError)
