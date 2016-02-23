@@ -40,7 +40,7 @@ func LoadDatabase(conf SQLConfig) error {
 	_, err = database.Exec("CREATE TABLE IF NOT EXISTS images (" +
 		"imgname VARCHAR(32) PRIMARY KEY," +
 		"format VARCHAR(16)," +
-		"mimetype VARCHAR(16)" +
+		"mimetype VARCHAR(16)," +
 		"adder VARCHAR(16) NOT NULL," +
 		"adderip VARCHAR(64) NOT NULL," +
 		"client VARCHAR(64) NOT NULL," +
