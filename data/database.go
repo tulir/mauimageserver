@@ -201,7 +201,7 @@ func Insert(imageName, imageFormat, mimeType, adder, adderip, client string, hid
 	} else {
 		hid = 0
 	}
-	_, err := database.Exec("INSERT INTO images (imgname, format, mimetype, adder, adderip, client, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?);", imageName, imageFormat, mimeType, adder, adderip, client, time.Now().Unix(), hid)
+	_, err := database.Exec("INSERT INTO images (imgname, format, mimetype, adder, adderip, client, timestamp, hidden) VALUES (?, ?, ?, ?, ?, ?, ?, ?);", imageName, imageFormat, mimeType, adder, adderip, client, time.Now().Unix(), hid)
 	return err
 }
 
