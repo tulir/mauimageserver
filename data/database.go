@@ -39,11 +39,11 @@ func LoadDatabase(conf SQLConfig) error {
 	} else if database == nil {
 		return fmt.Errorf("Failed to open SQL connection!")
 	}
-	_, err = database.Query("CREATE TABLE IF NOT EXISTS users (username VARCHAR(16) PRIMARY KEY, password BINARY(60) NOT NULL, authtoken BINARY(60));")
+	_, err = database.Exec("CREATE TABLE IF NOT EXISTS users (username VARCHAR(16) PRIMARY KEY, password BINARY(60) NOT NULL, authtoken BINARY(60));")
 	if err != nil {
 		return err
 	}
-	_, err = database.Query("CREATE TABLE IF NOT EXISTS images (" +
+	_, err = database.Exec("CREATE TABLE IF NOT EXISTS images (" +
 		"imgname VARCHAR(32) PRIMARY KEY," +
 		"format VARCHAR(16)," +
 		"adder VARCHAR(16) NOT NULL," +
@@ -69,6 +69,7 @@ func GetOwner(imageName string) string {
 	if err != nil {
 		return ""
 	}
+	defer result.Close()
 	for result.Next() {
 		if result.Err() != nil {
 			return ""
@@ -153,6 +154,7 @@ func Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry,
 			}
 		}
 	}
+	defer result.Close()
 	var results []ImageEntry
 	if err != nil {
 		return results, err
@@ -179,19 +181,19 @@ func Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry,
 
 // Remove removes the image with the given name.
 func Remove(imageName string) error {
-	_, err := database.Query("DELETE FROM images WHERE imgname=?", imageName)
+	_, err := database.Exec("DELETE FROM images WHERE imgname=?", imageName)
 	return err
 }
 
 // Insert inserts the given image name and marks it owned by the given username.
 func Insert(imageName, imageFormat, adder, adderip, client string) error {
-	_, err := database.Query("INSERT INTO images (imgname, format, adder, adderip, client, timestamp) VALUES (?, ?, ?, ?, ?, ?);", imageName, imageFormat, adder, adderip, client, time.Now().Unix())
+	_, err := database.Exec("INSERT INTO images (imgname, format, adder, adderip, client, timestamp) VALUES (?, ?, ?, ?, ?, ?);", imageName, imageFormat, adder, adderip, client, time.Now().Unix())
 	return err
 }
 
 // Update updates the image with the given name giving it the given information.
 func Update(imageName, imageFormat, adderip, client string) error {
-	_, err := database.Query("UPDATE images SET format=?,adderip=?,client=?,timestamp=? WHERE imgname=?", imageFormat, adderip, client, time.Now().Unix(), imageName)
+	_, err := database.Exec("UPDATE images SET format=?,adderip=?,client=?,timestamp=? WHERE imgname=?", imageFormat, adderip, client, time.Now().Unix(), imageName)
 	return err
 }
 
@@ -201,6 +203,7 @@ func Query(imageName string) (ImageEntry, error) {
 	if err != nil {
 		return ImageEntry{}, err
 	}
+	defer result.Close()
 	for result.Next() {
 		if result.Err() != nil {
 			return ImageEntry{}, result.Err()
@@ -224,6 +227,7 @@ func CheckAuthToken(username string, authtoken []byte) error {
 	result, err := database.Query("SELECT authtoken FROM users WHERE username=?;", username)
 	// Check if there was an error.
 	if err == nil {
+		defer result.Close()
 		// Loop through the result rows.
 		for result.Next() {
 			// Check if the current result has an error.
@@ -255,6 +259,7 @@ func Login(username string, password []byte) (string, error) {
 	result, err := database.Query("SELECT password FROM users WHERE username=?;", username)
 	// Check if there was an error.
 	if err == nil {
+		defer result.Close()
 		// Loop through the result rows.
 		for result.Next() {
 			// Check if the current result has an error.
