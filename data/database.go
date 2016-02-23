@@ -163,7 +163,7 @@ func Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry,
 		var timestamp int64
 		var id, hidden int
 
-		err = result.Scan(&imageName, &format, &mimeType, &adder, &adderip, &client, &timestamp, &id, &hidden)
+		err = result.Scan(&imageName, &format, &mimeType, &adder, &adderip, &client, &timestamp, &hidden, &id)
 		if err != nil || hidden != 0 {
 			continue
 		}
