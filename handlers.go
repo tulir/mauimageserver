@@ -20,7 +20,6 @@ type InsertForm struct {
 	Image       string `json:"image"`
 	ImageName   string `json:"image-name"`
 	ImageFormat string `json:"image-format"`
-	MimeType    string `json:"mime-type"`
 	Client      string `json:"client-name"`
 	Username    string `json:"username"`
 	AuthToken   string `json:"auth-token"`
@@ -179,9 +178,6 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	if len(ifr.Client) == 0 {
 		ifr.Client = "Unknown Client"
 	}
-	if len(ifr.MimeType) == 0 {
-		ifr.MimeType = ifr.ImageFormat
-	}
 
 	if len(ifr.Username) == 0 || len(ifr.AuthToken) == 0 {
 		// Username or authentication token not supplied.
@@ -219,7 +215,9 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	owner := data.GetOwner(ifr.ImageName)
 	if len(owner) > 0 {
 		if owner != ifr.Username || ifr.Username == "anonymous" {
-			output(w, InsertResponse{Success: false, Status: "already-exists", StatusReadable: "The requested image name is already in use by another user"}, http.StatusForbidden)
+			if !output(w, InsertResponse{Success: false, Status: "already-exists", StatusReadable: "The requested image name is already in use by another user"}, http.StatusForbidden) {
+				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
+			}
 			log.Debugf("%[1]s@%[2]s attempted to override an image uploaded by %[3]s.", ifr.Username, ip, owner)
 			return
 		}
@@ -234,6 +232,16 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	mimeType := http.DetectContentType(image)
+
+	if !strings.HasPrefix(mimeType, "image/") {
+		if !output(w, InsertResponse{Success: false, Status: "invalid-mime", StatusReadable: "The uploaded data is of an incorrect MIME type."}, http.StatusUnsupportedMediaType) {
+			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
+		}
+		return
+	}
+	mimeType = mimeType[len("image/"):]
+
 	// Write the image to disk.
 	err = ioutil.WriteFile(config.ImageLocation+"/"+ifr.ImageName+"."+ifr.ImageFormat, image, 0644)
 	if err != nil {
@@ -244,7 +252,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 
 	if !replace {
 		// The image name has not been used. Insert it into the database.
-		err = data.Insert(ifr.ImageName, ifr.ImageFormat, ifr.MimeType, ifr.Username, ip, ifr.Client, ifr.Hidden)
+		err = data.Insert(ifr.ImageName, ifr.ImageFormat, mimeType, ifr.Username, ip, ifr.Client, ifr.Hidden)
 		if err != nil {
 			log.Errorf("Error while inserting image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -260,7 +268,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// The image name was in use. Update the data in the database.
-		err = data.Update(ifr.ImageName, ifr.ImageFormat, ifr.MimeType, ip, ifr.Client, ifr.Hidden)
+		err = data.Update(ifr.ImageName, ifr.ImageFormat, mimeType, ip, ifr.Client, ifr.Hidden)
 		if err != nil {
 			log.Errorf("Error while updating data of image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
 			w.WriteHeader(http.StatusInternalServerError)
