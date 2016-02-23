@@ -20,14 +20,24 @@ type InsertForm struct {
 	Image       string `json:"image"`
 	ImageName   string `json:"image-name"`
 	ImageFormat string `json:"image-format"`
+	MimeType    string `json:"mime-type"`
 	Client      string `json:"client-name"`
 	Username    string `json:"username"`
 	AuthToken   string `json:"auth-token"`
+	Hidden      bool   `json:"hidden"`
 }
 
 // DeleteForm is the form for deleting images. AuthToken is required.
 type DeleteForm struct {
 	ImageName string `json:"image-name"`
+	Username  string `json:"username"`
+	AuthToken string `json:"auth-token"`
+}
+
+// HideForm is the form for hiding/unhiding images. AuthToken is required.
+type HideForm struct {
+	ImageName string `json:"image-name"`
+	Hidden    bool   `json:"hidden"`
 	Username  string `json:"username"`
 	AuthToken string `json:"auth-token"`
 }
@@ -169,6 +179,9 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	if len(ifr.Client) == 0 {
 		ifr.Client = "Unknown Client"
 	}
+	if len(ifr.MimeType) == 0 {
+		ifr.MimeType = ifr.ImageFormat
+	}
 
 	if len(ifr.Username) == 0 || len(ifr.AuthToken) == 0 {
 		// Username or authentication token not supplied.
@@ -231,7 +244,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 
 	if !replace {
 		// The image name has not been used. Insert it into the database.
-		err = data.Insert(ifr.ImageName, ifr.ImageFormat, ifr.Username, ip, ifr.Client)
+		err = data.Insert(ifr.ImageName, ifr.ImageFormat, ifr.MimeType, ifr.Username, ip, ifr.Client, ifr.Hidden)
 		if err != nil {
 			log.Errorf("Error while inserting image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -247,7 +260,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// The image name was in use. Update the data in the database.
-		err = data.Update(ifr.ImageName, ifr.ImageFormat, ip, ifr.Client)
+		err = data.Update(ifr.ImageName, ifr.ImageFormat, ifr.MimeType, ip, ifr.Client, ifr.Hidden)
 		if err != nil {
 			log.Errorf("Error while updating data of image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -262,6 +275,81 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		}, http.StatusAccepted) {
 			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
 		}
+	}
+}
+
+func hide(w http.ResponseWriter, r *http.Request) {
+	var ip = getIP(r)
+	if r.Method != "POST" {
+		w.Header().Add("Allow", "POST")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Create a json decoder for the payload.
+	decoder := json.NewDecoder(r.Body)
+	var hfr HideForm
+	// Decode the payload.
+	err := decoder.Decode(&hfr)
+	// Check if there was an error decoding.
+	if err != nil || len(hfr.ImageName) == 0 || len(hfr.Username) == 0 || len(hfr.AuthToken) == 0 {
+		log.Debugf("%[1]s sent an invalid delete request.", ip)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = data.CheckAuthToken(hfr.Username, []byte(hfr.AuthToken))
+	// Check if the auth token was correct
+	if err != nil {
+		log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, hfr.Username)
+		if !output(w, InsertResponse{
+			Success:        false,
+			Status:         "invalid-authtoken",
+			StatusReadable: "The authentication token was incorrect. Please try logging in again.",
+		}, http.StatusUnauthorized) {
+			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, hfr.Username, err)
+		}
+		return
+	}
+
+	owner := data.GetOwner(hfr.ImageName)
+	if len(owner) > 0 {
+		if owner != hfr.Username {
+			log.Debugf("%[1]s@%[2]s attempted to hide an image uploaded by %[3]s.", hfr.Username, ip, owner)
+			if !output(w, InsertResponse{Success: false, Status: "no-permissions", StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden) {
+				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, hfr.Username, err)
+			}
+			return
+		}
+	} else {
+		log.Debugf("%[1]s@%[2]s attempted to hide an image that doesn't exist.", hfr.Username, ip, owner)
+		if !output(w, InsertResponse{Success: false, Status: "does-not-exist", StatusReadable: "The image you requested to be deleted does not exist."}, http.StatusNotFound) {
+			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, hfr.Username, err)
+		}
+		return
+	}
+
+	err = data.Remove(hfr.ImageName)
+	if err != nil {
+		log.Warnf("Error changing hide status of %[4]s (requested by %[1]s@%[2]s): %[3]s", hfr.Username, ip, err, hfr.ImageName)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var hid string
+	if hfr.Hidden {
+		hid = "hidden"
+	} else {
+		hid = "unhidden"
+	}
+
+	log.Debugf("%[1]s@%[2]s successfully changed hidden status to %[4]b of the image with the name %[3]s.", hfr.Username, ip, hfr.ImageName, hfr.Hidden)
+	if !output(w, InsertResponse{
+		Success:        true,
+		Status:         hid,
+		StatusReadable: "The image " + hfr.ImageName + " was successfully " + hid + ".",
+	}, http.StatusAccepted) {
+		log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, hfr.Username, err)
 	}
 }
 
