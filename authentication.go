@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"maunium.net/go/mauimageserver/data"
 	log "maunium.net/go/maulogger"
 	"net/http"
 )
@@ -39,7 +38,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Try to login
-	authToken, err := data.Login(af.Username, []byte(af.Password))
+	authToken, err := auth.Login(af.Username, []byte(af.Password))
 	// Check if there was an error logging in.
 	if err != nil {
 		// Error detected.
@@ -88,7 +87,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Try to register
-	authToken, err := data.Register(af.Username, []byte(af.Password))
+	authToken, err := auth.Register(af.Username, []byte(af.Password))
 	// Check if there was an error logging in.
 	if err != nil {
 		// Error detected.

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"maunium.net/go/mauimageserver/data"
 	log "maunium.net/go/maulogger"
+	"maunium.net/go/mauth"
 	"net/http"
 	"os"
 	"strings"
@@ -44,10 +45,15 @@ func loadConfig() {
 func loadDatabase() {
 	log.Infof("Loading database...")
 
-	err := data.LoadDatabase(config.SQL)
+	database, err := data.LoadDatabase(config.SQL)
 	if err != nil {
 		log.Fatalf("Failed to load database: %[1]s", err)
 		os.Exit(2)
+	}
+
+	auth, err = mauth.Create(database)
+	if err != nil {
+		log.Fatalf("Failed to load Mauth: %[1]s", err)
 	}
 
 	log.Debugln("Successfully loaded database.")

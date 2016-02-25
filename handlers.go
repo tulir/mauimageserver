@@ -196,7 +196,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// Username and authentication token supplied, check them.
-		err = data.CheckAuthToken(ifr.Username, []byte(ifr.AuthToken))
+		err = auth.CheckAuthToken(ifr.Username, []byte(ifr.AuthToken))
 		if err != nil {
 			log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, ifr.Username)
 			if !output(w, InsertResponse{
@@ -306,7 +306,7 @@ func hide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = data.CheckAuthToken(hfr.Username, []byte(hfr.AuthToken))
+	err = auth.CheckAuthToken(hfr.Username, []byte(hfr.AuthToken))
 	// Check if the auth token was correct
 	if err != nil {
 		log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, hfr.Username)
@@ -381,7 +381,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = data.CheckAuthToken(dfr.Username, []byte(dfr.AuthToken))
+	err = auth.CheckAuthToken(dfr.Username, []byte(dfr.AuthToken))
 	// Check if the auth token was correct
 	if err != nil {
 		log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, dfr.Username)

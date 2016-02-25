@@ -6,6 +6,7 @@ import (
 	flag "github.com/ogier/pflag"
 	"maunium.net/go/mauimageserver/data"
 	log "maunium.net/go/maulogger"
+	"maunium.net/go/mauth"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,6 +21,7 @@ var confPath = flag.StringP("config", "c", "./config.json", "The path of the mau
 var disableSafeShutdown = flag.Bool("no-safe-shutdown", false, "Disable Interrupt/SIGTERM catching and handling.")
 
 var config *data.Configuration
+var auth mauth.System
 var favicon []byte
 
 func init() {
