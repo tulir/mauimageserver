@@ -173,8 +173,6 @@ func Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry,
 	return results, nil
 }
 
-// SELECT * FROM images WHERE timestamp BETWEEN ? AND ?
-
 // Remove removes the image with the given name.
 func Remove(imageName string) error {
 	_, err := database.Exec("DELETE FROM images WHERE imgname=?", imageName)
