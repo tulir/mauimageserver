@@ -1,124 +1,46 @@
 package main
 
 import (
-	"encoding/json"
 	log "maunium.net/go/maulogger"
 	"net/http"
 )
 
-// AuthForm is the generic authentication form which can be used for both, logging in and registering.
-type AuthForm struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-// AuthResponse is the generic authentication response which can be used for both, logging in and registering.
-type AuthResponse struct {
-	AuthToken     string `json:"auth-token,omitempty"`
-	Error         string `json:"error-simple,omitempty"`
-	ErrorReadable string `json:"error-humanreadable,omitempty"`
-}
-
 func login(w http.ResponseWriter, r *http.Request) {
 	var ip = getIP(r)
-	if r.Method != "POST" {
-		w.Header().Add("Allow", "POST")
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-	// Create a json decoder for the payload.
-	decoder := json.NewDecoder(r.Body)
-	var af AuthForm
-	// Decode the payload.
-	err := decoder.Decode(&af)
-	// Check if there was an error decoding.
-	if err != nil || len(af.Password) == 0 || len(af.Username) == 0 {
-		log.Debugf("%[1]s sent an invalid login request.", ip)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	// Try to login
-	authToken, err := auth.Login(af.Username, []byte(af.Password))
-	// Check if there was an error logging in.
+	errdata, err := auth.LoginHTTP(w, r)
 	if err != nil {
-		// Error detected.
-		if err.Error() == "incorrectpassword" {
-			// Incorrect password. Write unauthorized status.
-			log.Debugf("%[1]s tried to log in as %[2]s with the incorrect password.", ip, af.Username)
-			if !output(w, AuthResponse{Error: "incorrectpassword", ErrorReadable: "The username or password was incorrect."}, http.StatusUnauthorized) {
-				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, af.Username, err)
-			}
-		} else {
-			// Other error. Write internal server error status.
+		switch err.Error() {
+		case "illegalmethod":
+			log.Debugf("%[1]s tried to send a login request using HTTP %[2]s", ip, errdata)
+		case "invalidrequest":
+			log.Debugf("%[1]s sent an invalid login request.", ip)
+		case "incorrectpassword":
+			log.Debugf("%[1]s tried to log in as %[2]s with the incorrect password.", ip, errdata)
+		default:
 			log.Errorf("Login error: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
 		}
-		return
-	}
-	log.Debugf("%[1]s logged in as %[2]s successfully.", ip, af.Username)
-	if !output(w, AuthResponse{AuthToken: authToken}, http.StatusOK) {
-		log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, af.Username, err)
+	} else {
+		log.Debugf("%[1]s logged in as %[2]s successfully.", ip, errdata)
 	}
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
 	var ip = getIP(r)
-	if r.Method != "POST" {
-		w.Header().Add("Allow", "POST")
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-	// Create a json decoder for the payload.
-	decoder := json.NewDecoder(r.Body)
-	var af AuthForm
-	// Decode the payload.
-	err := decoder.Decode(&af)
-	// Check if there was an error decoding.
-	if err != nil || len(af.Password) == 0 || len(af.Username) == 0 {
-		log.Debugf("%[1]s sent an invalid register request.", ip)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if invalidName(af.Username) {
-		log.Debugf("%[1]s tried to register with an invalid name (%[2]s)", ip, af.Username)
-		if !output(w, AuthResponse{Error: "invalidname", ErrorReadable: "The name you entered is invalid. Allowed names: [a-zA-Z0-9_-]{3,16}"}, http.StatusNotAcceptable) {
-			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, af.Username, err)
-		}
-		return
-	}
-	// Try to register
-	authToken, err := auth.Register(af.Username, []byte(af.Password))
-	// Check if there was an error logging in.
+	errdata, err := auth.RegisterHTTP(w, r)
 	if err != nil {
-		// Error detected.
-		if err.Error() == "userexists" {
-			// Username already in use.
-			log.Debugf("%[1]s tried to register the name %[2]s, but it is already in use.", ip, af.Username)
-			if !output(w, AuthResponse{Error: "userexists", ErrorReadable: "The given username is already in use."}, http.StatusNotAcceptable) {
-				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, af.Username, err)
-			}
-		} else {
-			// Other error. Write internal server error status.
+		switch err.Error() {
+		case "illegalmethod":
+			log.Debugf("%[1]s tried to send a register request using HTTP %[2]s", ip, errdata)
+		case "invalidrequest":
+			log.Debugf("%[1]s sent an invalid register request.", ip)
+		case "userexists":
+			log.Debugf("%[1]s tried to register the name %[2]s, but it is already in use.", ip, errdata)
+		case "invalidname":
+			log.Debugf("%[1]s tried to register a name with illegal characters.", ip)
+		default:
 			log.Errorf("Register error: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
 		}
-		return
+	} else {
+		log.Debugf("%[1]s registered as %[2]s successfully.", ip, errdata)
 	}
-	log.Debugf("%[1]s registered as %[2]s successfully.", ip, af.Username)
-	if !output(w, AuthResponse{AuthToken: authToken}, http.StatusOK) {
-		log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, af.Username, err)
-	}
-}
-
-func invalidName(name string) bool {
-	if len(name) < 3 || len(name) > 16 {
-		return true
-	}
-	for _, char := range name {
-		if (char >= 48 && char <= 57) || (char >= 65 && char <= 90) || (char >= 97 && char <= 122) || char == 95 || char == 45 {
-			continue
-		}
-		return true
-	}
-	return false
 }
