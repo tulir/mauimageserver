@@ -1,16 +1,16 @@
 variables:
   GOROOT: "/usr/local/go"
-  GOPATH: "~/Go"
+  GOPATH: "/home/gitlab-runner/go"
 
 before_script:
   - "$GOROOT/bin/go get -u maunium.net/go/mauth"
   - "$GOROOT/bin/go get -u maunium.net/go/maulogger"
   - "$GOROOT/bin/go get -u github.com-go-sql-driver/mysql"
   - "$GOROOT/bin/go get -u github.com/ogier/pflag"
-  - "$GOROOT/bin/go get -u maunium.net/go/mauimageserver"
+#  - "$GOROOT/bin/go get -u maunium.net/go/mauimageserver"
 
 mainjob:
   script:
-    - "$GOROOT/bin/go build maunium.net/go/mauimageserver"
+    - "$GOROOT/bin/go build"
   stage: build
 
