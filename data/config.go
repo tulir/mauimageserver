@@ -38,7 +38,6 @@ type Configuration struct {
 
 // SQLConfig is the part of the config where details of the SQL database are stored.
 type SQLConfig struct {
-	Type           string      `json:"type"`
 	Database       string      `json:"database"`
 	Connection     SQLConnInfo `json:"connection"`
 	Authentication SQLAuthInfo `json:"authentication"`

@@ -8,7 +8,6 @@
     "ip": "127.0.0.1",
     "port": 29300,
     "sql": {
-        "type": "mysql",
         "connection": {
             "mode": "tcp",
             "ip": "127.0.0.1",
