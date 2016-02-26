@@ -1,18 +1,16 @@
-variables:
-  GOROOT: "/usr/local/go"
-  GOPATH: "/home/gitlab-runner/go"
+image: golang:1.6
 
 before_script:
-  - "$GOROOT/bin/go get -u maunium.net/go/mauth"
-  - "$GOROOT/bin/go get -u maunium.net/go/maulogger"
-  - "$GOROOT/bin/go get -u github.com/go-sql-driver/mysql"
-  - "$GOROOT/bin/go get -u github.com/ogier/pflag"
-  - "rm -f $GOPATH/src/maunium.net/go/mauimageserver"
-  - "ln -s $(pwd) $GOPATH/src/maunium.net/go/mauimageserver"
+  - "go get -u maunium.net/go/mauth"
+  - "go get -u maunium.net/go/maulogger"
+  - "go get -u github.com/go-sql-driver/mysql"
+  - "go get -u github.com/ogier/pflag"
+#  - "rm -f $GOPATH/src/maunium.net/go/mauimageserver"
+#  - "ln -s $(pwd) $GOPATH/src/maunium.net/go/mauimageserver"
 
 build:
   script:
-    - "$GOROOT/bin/go build"
+    - "go build"
     - "mv mis2 mauimageserver"
   stage: build
   tags:
