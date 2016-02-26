@@ -1,8 +1,5 @@
 image: golang:1.6
 
-variables:
-  
-
 before_script:
   - "go get -u maunium.net/go/mauth"
   - "go get -u maunium.net/go/maulogger"
