@@ -3,14 +3,14 @@ variables:
   GOPATH: "~/Go"
 
 before_script:
-  - "go get -u maunium.net/go/mauth"
-  - "go get -u maunium.net/go/maulogger"
-  - "go get -u github.com-go-sql-driver/mysql"
-  - "go get -u github.com/ogier/pflag"
-  - "go get -u maunium.net/go/mauimageserver"
+  - "$GOROOT/bin/go get -u maunium.net/go/mauth"
+  - "$GOROOT/bin/go get -u maunium.net/go/maulogger"
+  - "$GOROOT/bin/go get -u github.com-go-sql-driver/mysql"
+  - "$GOROOT/bin/go get -u github.com/ogier/pflag"
+  - "$GOROOT/bin/go get -u maunium.net/go/mauimageserver"
 
 mainjob:
   script:
-    - "go build maunium.net/go/mauimageserver"
+    - "$GOROOT/bin/go build maunium.net/go/mauimageserver"
   stage: build
 
