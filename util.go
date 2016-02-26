@@ -17,12 +17,14 @@ package main
 
 import (
 	"encoding/json"
+	"math/rand"
 	"maunium.net/go/mauimageserver/data"
 	log "maunium.net/go/maulogger"
 	"maunium.net/go/mauth"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 func getIP(r *http.Request) string {
@@ -44,6 +46,33 @@ func output(w http.ResponseWriter, response interface{}, status int) bool {
 	w.WriteHeader(status)
 	w.Write(json)
 	return true
+}
+
+const imageNameAC = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
+const (
+	letterIdxBits = 6
+	letterIdxMask = 1<<letterIdxBits - 1
+	letterIdxMax  = 63 / letterIdxBits
+)
+
+var src = rand.NewSource(time.Now().UnixNano())
+
+// ImageName generates a string matching [a-zA-Z0-9]{length}
+func ImageName(length int) string {
+	b := make([]byte, length)
+	for i, cache, remain := 4, src.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = src.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(imageNameAC) {
+			b[i] = imageNameAC[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return string(b)
 }
 
 func loadConfig() {
