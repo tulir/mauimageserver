@@ -1,0 +1,16 @@
+variables:
+  GOROOT: "/usr/local/go"
+  GOPATH: "~/Go"
+
+before_script:
+  - "go get -u maunium.net/go/mauth"
+  - "go get -u maunium.net/go/maulogger"
+  - "go get -u github.com-go-sql-driver/mysql"
+  - "go get -u github.com/ogier/pflag"
+  - "go get -u maunium.net/go/mauimageserver"
+
+mainjob:
+  script:
+    - "go build maunium.net/go/mauimageserver"
+  stage: build
+
