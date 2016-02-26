@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"maunium.net/go/mauimageserver/data"
-	"maunium.net/go/mauimageserver/random"
 	log "maunium.net/go/maulogger"
 	"net/http"
 	"os"
@@ -185,7 +184,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 
 	// Fill out all non-necessary unfilled values.
 	if len(ifr.ImageName) == 0 {
-		ifr.ImageName = random.ImageName(5)
+		ifr.ImageName = ImageName(5)
 	}
 	if len(ifr.ImageFormat) == 0 {
 		ifr.ImageFormat = "png"
