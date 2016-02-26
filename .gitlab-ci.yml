@@ -6,7 +6,7 @@ before_script:
   - "go get -u github.com/go-sql-driver/mysql"
   - "go get -u github.com/ogier/pflag"
 #  - "rm -f $GOPATH/src/maunium.net/go/mauimageserver"
-#  - "ln -s $(pwd) $GOPATH/src/maunium.net/go/mauimageserver"
+  - "ln -s /builds/Tulir293/mis2 /go/src/maunium.net/go/mauimageserver"
 
 build:
   script:
