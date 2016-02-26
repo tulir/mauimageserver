@@ -301,7 +301,7 @@ func hide(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&hfr)
 	// Check if there was an error decoding.
 	if err != nil || len(hfr.ImageName) == 0 || len(hfr.Username) == 0 || len(hfr.AuthToken) == 0 {
-		log.Debugf("%[1]s sent an invalid delete request.", ip)
+		log.Debugf("%[1]s sent an invalid hide request.", ip)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

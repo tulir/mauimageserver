@@ -1,12 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>mauImageServer - {{.ImageName}}</title>
-    <meta charset="UTF-8">
+  <title>mauImageServer - {{.ImageName}}</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.2/css/bootstrap.min.css" integrity="sha384-y3tfxAZXuh4HwSYylfB+J125MxIs6mR5FOHamPBG064zB+AFeWH94NdvaCBm8qnd" crossorigin="anonymous">
+
+  <link href='https://fonts.googleapis.com/css?family=Raleway:400,700' rel='stylesheet' type='text/css'>
 </head>
 <body>
+  <div class="container main">
     <center>
-        <img src="{{.ImageAddr}}" alt="{{.ImageName}}"/><br>
-        Image {{.ImageName}} (#{{.Index}}) by {{.Uploader}} on {{.Date}} with {{.Client}}
+      <div class="card">
+        <br>
+        <a href="{{.ImageAddr}}"><img class="card-img-top img-fluid" src="{{.ImageAddr}}" alt="{{.ImageName}}"></a>
+        <div class="card-block">
+          <p class="card-text">Image {{.ImageName}} (#{{.Index}}) by {{.Uploader}} on {{.Date}} using {{.Client}}
+          </p>
+        </div>
+      </div>
     </center>
+  </div>
+
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.2/js/bootstrap.min.js" integrity="sha384-vZ2WRJMwsjRMW/8U7i6PWi6AlO1L79snBrmgiDpgIWJ82z8eA5lenwvxbMV1PAh7" crossorigin="anonymous"></script>
 </body>
+</html>
