@@ -5,7 +5,7 @@ variables:
 before_script:
   - "$GOROOT/bin/go get -u maunium.net/go/mauth"
   - "$GOROOT/bin/go get -u maunium.net/go/maulogger"
-  - "$GOROOT/bin/go get -u github.com-go-sql-driver/mysql"
+  - "$GOROOT/bin/go get -u github.com/go-sql-driver/mysql"
   - "$GOROOT/bin/go get -u github.com/ogier/pflag"
 #  - "$GOROOT/bin/go get -u maunium.net/go/mauimageserver"
 
