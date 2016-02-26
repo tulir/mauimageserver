@@ -1,5 +1,8 @@
 image: golang:1.6
 
+variables:
+  
+
 before_script:
   - "go get -u maunium.net/go/mauth"
   - "go get -u maunium.net/go/maulogger"
@@ -9,16 +12,16 @@ before_script:
 
 build:
   script:
-    - "go build"
-    - "env GOOS=windows go build"
-    - "mv mis2 mauimageserver"
-    - "mv mis2.exe mauimageserver.exe"
+    - "env GOOS=linux GOARCH=amd64 go build -o mauimageserver_amd64"
+    - "env GOOS=linux GOARCH=arm go build -o mauimageserver_arm"
+    - "env GOOS=windows GOARCH=amd64 go build -o mauimageserver_amd64.exe"
   stage: build
   tags:
     - golang
   artifacts:
     paths:
-    - mauimageserver
-    - mauimageserver.exe
+    - mauimageserver_amd64
+    - mauimageserver_arm
+    - mauimageserver_amd64.exe
     - config.json
     - LICENSE
