@@ -5,18 +5,20 @@ before_script:
   - "go get -u maunium.net/go/maulogger"
   - "go get -u github.com/go-sql-driver/mysql"
   - "go get -u github.com/ogier/pflag"
-#  - "rm -f $GOPATH/src/maunium.net/go/mauimageserver"
   - "ln -s /builds/Tulir293/mis2 /go/src/maunium.net/go/mauimageserver"
 
 build:
   script:
     - "go build"
+    - "env GOOS=windows go build"
     - "mv mis2 mauimageserver"
+    - "mv mis2.exe mauimageserver.exe"
   stage: build
   tags:
     - golang
   artifacts:
     paths:
     - mauimageserver
+    - mauimageserver.exe
     - config.json
     - LICENSE
