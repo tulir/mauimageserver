@@ -14,5 +14,11 @@ before_script:
 mainjob:
   script:
     - "$GOROOT/bin/go build"
+    - "mv mis2 mauimageserver"
   stage: build
+  tags:
+    - golang
 
+artifacts:
+  paths:
+  - mauimageserver
