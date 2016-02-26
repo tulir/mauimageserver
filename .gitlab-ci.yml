@@ -10,14 +10,14 @@ before_script:
   - "rm -f $GOPATH/src/maunium.net/go/mauimageserver"
   - "ln -s $(pwd) $GOPATH/src/maunium.net/go/mauimageserver"
 
-mainjob:
+build:
   script:
     - "$GOROOT/bin/go build"
     - "mv mis2 mauimageserver"
   stage: build
   tags:
     - golang
+  artifacts:
+    paths:
+    - mauimageserver
 
-artifacts:
-  paths:
-  - mauimageserver
