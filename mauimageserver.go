@@ -22,7 +22,6 @@ var disableSafeShutdown = flag.Bool("no-safe-shutdown", false, "Disable Interrup
 
 var config *data.Configuration
 var auth mauth.System
-var favicon []byte
 
 func init() {
 	flag.Parse()
