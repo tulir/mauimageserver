@@ -39,7 +39,7 @@ var config *data.Configuration
 var database data.MISDatabase
 var auth mauth.System
 
-func init() {
+func main() {
 	flag.Parse()
 
 	if !*disableSafeShutdown {
@@ -53,9 +53,7 @@ func init() {
 			os.Exit(0)
 		}()
 	}
-}
 
-func main() {
 	// Configure the logger
 	log.PrintDebug = *debug
 	log.Fileformat = func(date string, i int) string { return fmt.Sprintf("logs/%[1]s-%02[2]d.log", date, i) }
