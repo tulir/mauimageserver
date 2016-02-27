@@ -204,10 +204,10 @@ func insert(w http.ResponseWriter, r *http.Request) {
 			}, http.StatusUnauthorized) {
 				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
 			}
-		} else {
-			// The user is not logged in, but login is not required, set username to "anonymous"
-			ifr.Username = "anonymous"
+			return
 		}
+		// The user is not logged in, but login is not required, set username to "anonymous"
+		ifr.Username = "anonymous"
 	} else {
 		// Username and authentication token supplied, check them.
 		err = auth.CheckAuthToken(ifr.Username, []byte(ifr.AuthToken))
