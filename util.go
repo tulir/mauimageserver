@@ -89,13 +89,15 @@ func loadConfig() {
 func loadDatabase() {
 	log.Infof("Loading database...")
 
-	database, err := data.LoadDatabase(config.SQL)
+	database = data.CreateDatabase(config.SQL)
+
+	err := database.Load()
 	if err != nil {
 		log.Fatalf("Failed to load database: %[1]s", err)
 		os.Exit(2)
 	}
 
-	auth, err = mauth.Create(database)
+	auth, err = mauth.Create(database.GetInternalDB())
 	if err != nil {
 		log.Fatalf("Failed to load Mauth: %[1]s", err)
 	}

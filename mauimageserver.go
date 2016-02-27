@@ -36,6 +36,7 @@ var confPath = flag.StringP("config", "c", "/etc/mis2/config.json", "The path of
 var disableSafeShutdown = flag.Bool("no-safe-shutdown", false, "Disable Interrupt/SIGTERM catching and handling.")
 
 var config *data.Configuration
+var database data.MISDatabase
 var auth mauth.System
 
 func init() {
@@ -48,7 +49,7 @@ func init() {
 			<-c
 			os.Stdout.Write([]byte("\n"))
 			log.Infof("Shutting down mauImageServer...")
-			data.UnloadDatabase()
+			database.Unload()
 			os.Exit(0)
 		}()
 	}

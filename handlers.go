@@ -106,7 +106,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 		sf.MaxTime = time.Now().Unix()
 	}
 
-	results, err := data.Search(sf.Format, sf.Uploader, sf.Client, sf.MinTime, sf.MaxTime)
+	results, err := database.Search(sf.Format, sf.Uploader, sf.Client, sf.MinTime, sf.MaxTime)
 	if err != nil {
 		log.Errorf("Failed to execute search %[2]s by %[1]s: %[3]s", ip, sf.String(), err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -127,7 +127,7 @@ func get(w http.ResponseWriter, r *http.Request) {
 	}
 	path := r.URL.Path[1:]
 
-	img, err := data.Query(path)
+	img, err := database.Query(path)
 	if err == nil {
 		date := time.Unix(img.Timestamp, 0).Format(config.DateFormat)
 		r.URL.Path = r.URL.Path + "." + img.Format
@@ -152,7 +152,7 @@ func get(w http.ResponseWriter, r *http.Request) {
 
 	split := strings.Split(path, ".")
 	if len(split) > 0 {
-		img, err = data.Query(split[0])
+		img, err = database.Query(split[0])
 		if err == nil && len(img.Format) > 0 {
 			w.Header().Set("Content-type", "image/"+img.Format)
 		} else if len(split) > 1 {
@@ -226,7 +226,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 
 	// If the image already exists, make sure that the uploader is the owner of the image.
 	var replace = false
-	owner := data.GetOwner(ifr.ImageName)
+	owner := database.GetOwner(ifr.ImageName)
 	if len(owner) > 0 {
 		if owner != ifr.Username || ifr.Username == "anonymous" {
 			if !output(w, InsertResponse{Success: false, Status: "already-exists", StatusReadable: "The requested image name is already in use by another user"}, http.StatusForbidden) {
@@ -266,7 +266,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 
 	if !replace {
 		// The image name has not been used. Insert it into the database.
-		err = data.Insert(ifr.ImageName, ifr.ImageFormat, mimeType, ifr.Username, ip, ifr.Client, ifr.Hidden)
+		err = database.Insert(ifr.ImageName, ifr.ImageFormat, mimeType, ifr.Username, ip, ifr.Client, ifr.Hidden)
 		if err != nil {
 			log.Errorf("Error while inserting image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -282,7 +282,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// The image name was in use. Update the data in the database.
-		err = data.Update(ifr.ImageName, ifr.ImageFormat, mimeType, ip, ifr.Client, ifr.Hidden)
+		err = database.Update(ifr.ImageName, ifr.ImageFormat, mimeType, ip, ifr.Client, ifr.Hidden)
 		if err != nil {
 			log.Errorf("Error while updating data of image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -334,7 +334,7 @@ func hide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	owner := data.GetOwner(hfr.ImageName)
+	owner := database.GetOwner(hfr.ImageName)
 	if len(owner) > 0 {
 		if owner != hfr.Username {
 			log.Debugf("%[1]s@%[2]s attempted to hide an image uploaded by %[3]s.", hfr.Username, ip, owner)
@@ -351,7 +351,7 @@ func hide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = data.SetHidden(hfr.ImageName, hfr.Hidden)
+	err = database.SetHidden(hfr.ImageName, hfr.Hidden)
 	if err != nil {
 		log.Warnf("Error changing hide status of %[4]s (requested by %[1]s@%[2]s): %[3]s", hfr.Username, ip, err, hfr.ImageName)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -409,7 +409,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	owner := data.GetOwner(dfr.ImageName)
+	owner := database.GetOwner(dfr.ImageName)
 	if len(owner) > 0 {
 		if owner != dfr.Username {
 			log.Debugf("%[1]s@%[2]s attempted to delete an image uploaded by %[3]s.", dfr.Username, ip, owner)
@@ -426,7 +426,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = data.Remove(dfr.ImageName)
+	err = database.Remove(dfr.ImageName)
 	if err != nil {
 		log.Warnf("Error deleting %[4]s from the database (requested by %[1]s@%[2]s): %[3]s", dfr.Username, ip, err, dfr.ImageName)
 		w.WriteHeader(http.StatusInternalServerError)

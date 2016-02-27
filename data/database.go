@@ -36,20 +36,58 @@ type ImageEntry struct {
 	Hidden    bool   `json:"hidden,omitempty"`
 }
 
-var database *sql.DB
+// MISDatabase is the interface for MIS databases.
+type MISDatabase interface {
+	// Open a connection and initialize the underlying database.
+	Load() error
+	// Unload the underlying database.
+	Unload() error
+	// GetInternalDB returns the underlying sql.DB pointer.
+	GetInternalDB() *sql.DB
 
-// LoadDatabase loads the database based on the given configuration.
-func LoadDatabase(conf SQLConfig) (*sql.DB, error) {
+	// Insert the given image name and marks it owned by the given username.
+	Insert(imageName, imageFormat, mimeType, adder, adderip, client string, hidden bool) error
+	// Update the image with the given name giving it the given information.
+	Update(imageName, imageFormat, mimeType, adderip, client string, hidden bool) error
+
+	// Remove the image with the given name.
+	Remove(imageName string) error
+	// SetHidden changes the hidden status of the image.
+	SetHidden(imageName string, hidden bool) error
+
+	// Query for basic details of the given image.
+	Query(imageName string) (ImageEntry, error)
+	// GetOwner gets the owner of the image with the given name.
+	GetOwner(imageName string) string
+	// Search the database with the given arguments.
+	Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry, error)
+}
+
+type mis struct {
+	conf SQLConfig
+	db   *sql.DB
+}
+
+// CreateDatabase creates an instance of MISDatabase
+func CreateDatabase(config SQLConfig) MISDatabase {
+	return mis{conf: config}
+}
+
+func (data mis) GetInternalDB() *sql.DB {
+	return data.db
+}
+
+func (data mis) Load() error {
 	var err error
-	database, err = sql.Open("mysql", fmt.Sprintf("%[1]s@%[2]s/%[3]s", conf.Authentication.ToString(), conf.Connection.ToString(), conf.Database))
+	data.db, err = sql.Open("mysql", fmt.Sprintf("%[1]s@%[2]s/%[3]s", data.conf.Authentication.ToString(), data.conf.Connection.ToString(), data.conf.Database))
 
 	if err != nil {
-		return nil, err
-	} else if database == nil {
-		return nil, fmt.Errorf("Failed to open SQL connection!")
+		return err
+	} else if data.db == nil {
+		return fmt.Errorf("Failed to open SQL connection!")
 	}
 
-	_, err = database.Exec("CREATE TABLE IF NOT EXISTS images (" +
+	_, err = data.db.Exec("CREATE TABLE IF NOT EXISTS images (" +
 		"imgname VARCHAR(32) PRIMARY KEY," +
 		"format VARCHAR(16)," +
 		"mimetype VARCHAR(16)," +
@@ -61,19 +99,17 @@ func LoadDatabase(conf SQLConfig) (*sql.DB, error) {
 		"id MEDIUMINT UNIQUE KEY AUTO_INCREMENT" +
 		");")
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return database, nil
+	return nil
 }
 
-// UnloadDatabase unloads the database.
-func UnloadDatabase() {
-	database.Close()
+func (data mis) Unload() error {
+	return data.db.Close()
 }
 
-// GetOwner gets the owner of the image with the given name.
-func GetOwner(imageName string) string {
-	result, err := database.Query("SELECT adder FROM images WHERE imgname=?", imageName)
+func (data mis) GetOwner(imageName string) string {
+	result, err := data.db.Query("SELECT adder FROM images WHERE imgname=?", imageName)
 	if err != nil {
 		return ""
 	}
@@ -91,40 +127,39 @@ func GetOwner(imageName string) string {
 	return ""
 }
 
-// Search searches the database with the given arguments.
-func Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry, error) {
+func (data mis) Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry, error) {
 	var result *sql.Rows
 	var err error
 	if len(format) == 0 {
 		if len(adder) == 0 {
 			if len(client) == 0 {
 				if timeMin <= 0 || timeMax <= 0 {
-					result, err = database.Query("SELECT * FROM images;")
+					result, err = data.db.Query("SELECT * FROM images;")
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE timestamp BETWEEN ? AND ?;", timeMin, timeMax)
+					result, err = data.db.Query("SELECT * FROM images WHERE timestamp BETWEEN ? AND ?;", timeMin, timeMax)
 				}
 			} else {
 				client = "%" + client + "%"
 				if timeMin <= 0 || timeMax <= 0 {
-					result, err = database.Query("SELECT * FROM images WHERE (client LIKE ?);", client)
+					result, err = data.db.Query("SELECT * FROM images WHERE (client LIKE ?);", client)
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE (client LIKE ?) AND (timestamp BETWEEN ? AND ?);", client, timeMin, timeMax)
+					result, err = data.db.Query("SELECT * FROM images WHERE (client LIKE ?) AND (timestamp BETWEEN ? AND ?);", client, timeMin, timeMax)
 				}
 			}
 		} else {
 			adder = "%" + adder + "%"
 			if len(client) == 0 {
 				if timeMin <= 0 || timeMax <= 0 {
-					result, err = database.Query("SELECT * FROM images WHERE (adder LIKE ?);", adder)
+					result, err = data.db.Query("SELECT * FROM images WHERE (adder LIKE ?);", adder)
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE (adder LIKE ?) AND (timestamp BETWEEN ? AND ?);", adder, timeMin, timeMax)
+					result, err = data.db.Query("SELECT * FROM images WHERE (adder LIKE ?) AND (timestamp BETWEEN ? AND ?);", adder, timeMin, timeMax)
 				}
 			} else {
 				client = "%" + client + "%"
 				if timeMin <= 0 || timeMax <= 0 {
-					result, err = database.Query("SELECT * FROM images WHERE (adder LIKE ?) AND (client LIKE ?);", adder, client)
+					result, err = data.db.Query("SELECT * FROM images WHERE (adder LIKE ?) AND (client LIKE ?);", adder, client)
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE (adder LIKE ?) AND (client LIKE ?) AND (timestamp BETWEEN ? AND ?);", adder, client, timeMin, timeMax)
+					result, err = data.db.Query("SELECT * FROM images WHERE (adder LIKE ?) AND (client LIKE ?) AND (timestamp BETWEEN ? AND ?);", adder, client, timeMin, timeMax)
 				}
 			}
 		}
@@ -132,32 +167,32 @@ func Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry,
 		if len(adder) == 0 {
 			if len(client) == 0 {
 				if timeMin == 0 || timeMax == 0 {
-					result, err = database.Query("SELECT * FROM images WHERE format=?;", format)
+					result, err = data.db.Query("SELECT * FROM images WHERE format=?;", format)
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE format=? AND (timestamp BETWEEN ? AND ?);", format, timeMin, timeMax)
+					result, err = data.db.Query("SELECT * FROM images WHERE format=? AND (timestamp BETWEEN ? AND ?);", format, timeMin, timeMax)
 				}
 			} else {
 				client = "%" + client + "%"
 				if timeMin == 0 || timeMax == 0 {
-					result, err = database.Query("SELECT * FROM images WHERE format=? AND (client LIKE ?);", format, client)
+					result, err = data.db.Query("SELECT * FROM images WHERE format=? AND (client LIKE ?);", format, client)
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE format=? AND (client LIKE ?) AND (timestamp BETWEEN ? AND ?);", format, client, timeMin, timeMax)
+					result, err = data.db.Query("SELECT * FROM images WHERE format=? AND (client LIKE ?) AND (timestamp BETWEEN ? AND ?);", format, client, timeMin, timeMax)
 				}
 			}
 		} else {
 			adder = "%" + adder + "%"
 			if len(client) == 0 {
 				if timeMin == 0 || timeMax == 0 {
-					result, err = database.Query("SELECT * FROM images WHERE format=? AND (adder LIKE ?);", format, adder)
+					result, err = data.db.Query("SELECT * FROM images WHERE format=? AND (adder LIKE ?);", format, adder)
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE format=? AND (adder LIKE ?) AND (timestamp BETWEEN ? AND ?);", format, adder, timeMin, timeMax)
+					result, err = data.db.Query("SELECT * FROM images WHERE format=? AND (adder LIKE ?) AND (timestamp BETWEEN ? AND ?);", format, adder, timeMin, timeMax)
 				}
 			} else {
 				client = "%" + client + "%"
 				if timeMin == 0 || timeMax == 0 {
-					result, err = database.Query("SELECT * FROM images WHERE format=? AND (adder LIKE ?) AND (client LIKE ?);", format, adder, client)
+					result, err = data.db.Query("SELECT * FROM images WHERE format=? AND (adder LIKE ?) AND (client LIKE ?);", format, adder, client)
 				} else {
-					result, err = database.Query("SELECT * FROM images WHERE format=? AND (adder LIKE ?) AND (client LIKE ?) AND (timestamp BETWEEN ? AND ?);", format, adder, client, timeMin, timeMax)
+					result, err = data.db.Query("SELECT * FROM images WHERE format=? AND (adder LIKE ?) AND (client LIKE ?) AND (timestamp BETWEEN ? AND ?);", format, adder, client, timeMin, timeMax)
 				}
 			}
 		}
@@ -185,51 +220,46 @@ func Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry,
 	return results, nil
 }
 
-// Remove removes the image with the given name.
-func Remove(imageName string) error {
-	_, err := database.Exec("DELETE FROM images WHERE imgname=?", imageName)
+func (data mis) Remove(imageName string) error {
+	_, err := data.db.Exec("DELETE FROM images WHERE imgname=?", imageName)
 	return err
 }
 
-// SetHidden changes the hidden status of the image.
-func SetHidden(imageName string, hidden bool) error {
+func (data mis) SetHidden(imageName string, hidden bool) error {
 	var hid int
 	if hidden {
 		hid = 1
 	} else {
 		hid = 0
 	}
-	_, err := database.Exec("UPDATE images SET hidden=? WHERE imgname=?", hid, imageName)
+	_, err := data.db.Exec("UPDATE images SET hidden=? WHERE imgname=?", hid, imageName)
 	return err
 }
 
-// Insert inserts the given image name and marks it owned by the given username.
-func Insert(imageName, imageFormat, mimeType, adder, adderip, client string, hidden bool) error {
+func (data mis) Insert(imageName, imageFormat, mimeType, adder, adderip, client string, hidden bool) error {
 	var hid int
 	if hidden {
 		hid = 1
 	} else {
 		hid = 0
 	}
-	_, err := database.Exec("INSERT INTO images (imgname, format, mimetype, adder, adderip, client, timestamp, hidden) VALUES (?, ?, ?, ?, ?, ?, ?, ?);", imageName, imageFormat, mimeType, adder, adderip, client, time.Now().Unix(), hid)
+	_, err := data.db.Exec("INSERT INTO images (imgname, format, mimetype, adder, adderip, client, timestamp, hidden) VALUES (?, ?, ?, ?, ?, ?, ?, ?);", imageName, imageFormat, mimeType, adder, adderip, client, time.Now().Unix(), hid)
 	return err
 }
 
-// Update updates the image with the given name giving it the given information.
-func Update(imageName, imageFormat, mimeType, adderip, client string, hidden bool) error {
+func (data mis) Update(imageName, imageFormat, mimeType, adderip, client string, hidden bool) error {
 	var hid int
 	if hidden {
 		hid = 1
 	} else {
 		hid = 0
 	}
-	_, err := database.Exec("UPDATE images SET format=?,mimetype=?,adderip=?,client=?,timestamp=?,hidden=? WHERE imgname=?", imageFormat, mimeType, adderip, client, time.Now().Unix(), hid, imageName)
+	_, err := data.db.Exec("UPDATE images SET format=?,mimetype=?,adderip=?,client=?,timestamp=?,hidden=? WHERE imgname=?", imageFormat, mimeType, adderip, client, time.Now().Unix(), hid, imageName)
 	return err
 }
 
-// Query for basic details of the given image.
-func Query(imageName string) (ImageEntry, error) {
-	result, err := database.Query("SELECT format, mimetype, adder, adderip, client, timestamp, id, hidden FROM images WHERE imgname=?", imageName)
+func (data mis) Query(imageName string) (ImageEntry, error) {
+	result, err := data.db.Query("SELECT format, mimetype, adder, adderip, client, timestamp, id, hidden FROM images WHERE imgname=?", imageName)
 	if err != nil {
 		return ImageEntry{}, err
 	}
