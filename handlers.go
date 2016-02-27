@@ -114,9 +114,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Debugf("%[1]s executed a search: %s", ip, sf.String())
-	if !output(w, results, http.StatusOK) {
-		log.Errorf("Failed to marshal output json to %[1]s: %[2]s", ip, err)
-	}
+	output(w, results, http.StatusOK)
 }
 
 func get(w http.ResponseWriter, r *http.Request) {
@@ -197,13 +195,11 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		// Username or authentication token not supplied.
 		if config.RequireAuth {
 			// The user is not logged in, but the config is set to require authentication, send error.
-			if !output(w, InsertResponse{
+			output(w, InsertResponse{
 				Success:        false,
 				Status:         "not-logged-in",
 				StatusReadable: "This MIS server requires authentication. Please log in or register.",
-			}, http.StatusUnauthorized) {
-				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
-			}
+			}, http.StatusUnauthorized)
 			return
 		}
 		// The user is not logged in, but login is not required, set username to "anonymous"
@@ -213,13 +209,11 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		err = auth.CheckAuthToken(ifr.Username, []byte(ifr.AuthToken))
 		if err != nil {
 			log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, ifr.Username)
-			if !output(w, InsertResponse{
+			output(w, InsertResponse{
 				Success:        false,
 				Status:         "invalid-authtoken",
 				StatusReadable: "Your authentication token was incorrect. Please try logging in again.",
-			}, http.StatusUnauthorized) {
-				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
-			}
+			}, http.StatusUnauthorized)
 			return
 		}
 	}
@@ -229,13 +223,11 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	owner := database.GetOwner(ifr.ImageName)
 	if len(owner) > 0 {
 		if owner != ifr.Username || ifr.Username == "anonymous" {
-			if !output(w, InsertResponse{
+			output(w, InsertResponse{
 				Success:        false,
 				Status:         "already-exists",
 				StatusReadable: "The requested image name is already in use by another user",
-			}, http.StatusForbidden) {
-				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
-			}
+			}, http.StatusForbidden)
 			log.Debugf("%[1]s@%[2]s attempted to override an image uploaded by %[3]s.", ifr.Username, ip, owner)
 			return
 		}
@@ -245,10 +237,8 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	// Decode the base64 image from the JSON request.
 	image, err := base64.StdEncoding.DecodeString(ifr.Image)
 	if err != nil {
-		if !output(w, InsertResponse{Success: false, Status: "invalid-image-encoding",
-			StatusReadable: "The given image is not properly encoded in base64."}, http.StatusUnsupportedMediaType) {
-			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
-		}
+		output(w, InsertResponse{Success: false, Status: "invalid-image-encoding",
+			StatusReadable: "The given image is not properly encoded in base64."}, http.StatusUnsupportedMediaType)
 		log.Errorf("Error while decoding image from %[1]s@%[2]s: %[3]s", ifr.Username, ip, err)
 		return
 	}
@@ -256,13 +246,11 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	mimeType := http.DetectContentType(image)
 
 	if !strings.HasPrefix(mimeType, "image/") {
-		if !output(w, InsertResponse{
+		output(w, InsertResponse{
 			Success:        false,
 			Status:         "invalid-mime",
 			StatusReadable: "The uploaded data is of an incorrect MIME type.",
-		}, http.StatusUnsupportedMediaType) {
-			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
-		}
+		}, http.StatusUnsupportedMediaType)
 		return
 	}
 	mimeType = mimeType[len("image/"):]
@@ -284,13 +272,11 @@ func insert(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (new).", ifr.Username, ip, ifr.ImageName)
-		if !output(w, InsertResponse{
+		output(w, InsertResponse{
 			Success:        true,
 			Status:         "created",
 			StatusReadable: "The image was successfully saved with the name " + ifr.ImageName,
-		}, http.StatusCreated) {
-			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
-		}
+		}, http.StatusCreated)
 	} else {
 		// The image name was in use. Update the data in the database.
 		err = database.Update(ifr.ImageName, ifr.ImageFormat, mimeType, ip, ifr.Client, ifr.Hidden)
@@ -300,14 +286,12 @@ func insert(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (replaced).", ifr.Username, ip, ifr.ImageName)
-		if !output(w, InsertResponse{
+		output(w, InsertResponse{
 			Success: true,
 			Status:  "replaced",
 			StatusReadable: "The image was successfully saved with the name " + ifr.ImageName +
 				", replacing your previous image with the same name",
-		}, http.StatusAccepted) {
-			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
-		}
+		}, http.StatusAccepted)
 	}
 }
 
@@ -335,13 +319,11 @@ func hide(w http.ResponseWriter, r *http.Request) {
 	// Check if the auth token was correct
 	if err != nil {
 		log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, hfr.Username)
-		if !output(w, InsertResponse{
+		output(w, InsertResponse{
 			Success:        false,
 			Status:         "invalid-authtoken",
 			StatusReadable: "The authentication token was incorrect. Please try logging in again.",
-		}, http.StatusUnauthorized) {
-			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, hfr.Username, err)
-		}
+		}, http.StatusUnauthorized)
 		return
 	}
 
@@ -349,20 +331,16 @@ func hide(w http.ResponseWriter, r *http.Request) {
 	if len(owner) > 0 {
 		if owner != hfr.Username {
 			log.Debugf("%[1]s@%[2]s attempted to hide an image uploaded by %[3]s.", hfr.Username, ip, owner)
-			if !output(w, InsertResponse{
+			output(w, InsertResponse{
 				Success:        false,
 				Status:         "no-permissions",
 				StatusReadable: "The image you requested to be deleted was not uploaded by you.",
-			}, http.StatusForbidden) {
-				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, hfr.Username, err)
-			}
+			}, http.StatusForbidden)
 			return
 		}
 	} else {
 		log.Debugf("%[1]s@%[2]s attempted to hide an image that doesn't exist.", hfr.Username, ip, owner)
-		if !output(w, InsertResponse{Success: false, Status: "does-not-exist", StatusReadable: "The image you requested to be deleted does not exist."}, http.StatusNotFound) {
-			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, hfr.Username, err)
-		}
+		output(w, InsertResponse{Success: false, Status: "does-not-exist", StatusReadable: "The image you requested to be deleted does not exist."}, http.StatusNotFound)
 		return
 	}
 
@@ -381,13 +359,11 @@ func hide(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Debugf("%[1]s@%[2]s successfully changed hidden status to %[4]b of the image with the name %[3]s.", hfr.Username, ip, hfr.ImageName, hfr.Hidden)
-	if !output(w, InsertResponse{
+	output(w, InsertResponse{
 		Success:        true,
 		Status:         hid,
 		StatusReadable: "The image " + hfr.ImageName + " was successfully " + hid + ".",
-	}, http.StatusAccepted) {
-		log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, hfr.Username, err)
-	}
+	}, http.StatusAccepted)
 }
 
 func delete(w http.ResponseWriter, r *http.Request) {
@@ -414,13 +390,11 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	// Check if the auth token was correct
 	if err != nil {
 		log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, dfr.Username)
-		if !output(w, InsertResponse{
+		output(w, InsertResponse{
 			Success:        false,
 			Status:         "invalid-authtoken",
 			StatusReadable: "The authentication token was incorrect. Please try logging in again.",
-		}, http.StatusUnauthorized) {
-			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, dfr.Username, err)
-		}
+		}, http.StatusUnauthorized)
 		return
 	}
 
@@ -428,17 +402,13 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	if len(owner) > 0 {
 		if owner != dfr.Username {
 			log.Debugf("%[1]s@%[2]s attempted to delete an image uploaded by %[3]s.", dfr.Username, ip, owner)
-			if !output(w, InsertResponse{Success: false, Status: "no-permissions",
-				StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden) {
-				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, dfr.Username, err)
-			}
+			output(w, InsertResponse{Success: false, Status: "no-permissions",
+				StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden)
 			return
 		}
 	} else {
 		log.Debugf("%[1]s@%[2]s attempted to delete an image that doesn't exist.", dfr.Username, ip, owner)
-		if !output(w, InsertResponse{Success: false, Status: "does-not-exist", StatusReadable: "The image you requested to be deleted does not exist."}, http.StatusNotFound) {
-			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, dfr.Username, err)
-		}
+		output(w, InsertResponse{Success: false, Status: "does-not-exist", StatusReadable: "The image you requested to be deleted does not exist."}, http.StatusNotFound)
 		return
 	}
 
@@ -460,11 +430,9 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	log.Debugf("%[1]s@%[2]s successfully deleted the image with the name %[3]s.", dfr.Username, ip, dfr.ImageName)
-	if !output(w, InsertResponse{
+	output(w, InsertResponse{
 		Success:        true,
 		Status:         "deleted",
 		StatusReadable: "The image " + dfr.ImageName + " was successfully deleted.",
-	}, http.StatusAccepted) {
-		log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, dfr.Username, err)
-	}
+	}, http.StatusAccepted)
 }
