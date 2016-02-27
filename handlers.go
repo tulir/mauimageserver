@@ -195,6 +195,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		// Username or authentication token not supplied.
 		if config.RequireAuth {
 			// The user is not logged in, but the config is set to require authentication, send error.
+			log.Debugf("%[1]s tried to upload an image without authentication, even though authentication is required.", ip)
 			output(w, InsertResponse{
 				Success:        false,
 				Status:         "not-logged-in",
@@ -246,6 +247,7 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	mimeType := http.DetectContentType(image)
 
 	if !strings.HasPrefix(mimeType, "image/") {
+		log.Debugf("%[1]s@%[2]s attempted to upload an image with an incorrect MIME type.", ifr.Username, ip, owner)
 		output(w, InsertResponse{
 			Success:        false,
 			Status:         "invalid-mime",
