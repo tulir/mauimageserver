@@ -241,8 +241,10 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	// Decode the base64 image from the JSON request.
 	image, err := base64.StdEncoding.DecodeString(ifr.Image)
 	if err != nil {
+		if !output(w, InsertResponse{Success: false, Status: "invalid-image-encoding", StatusReadable: "The given image is not properly encoded in base64."}, http.StatusUnsupportedMediaType) {
+			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
+		}
 		log.Errorf("Error while decoding image from %[1]s@%[2]s: %[3]s", ifr.Username, ip, err)
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
