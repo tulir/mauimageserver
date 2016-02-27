@@ -268,6 +268,11 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		err = database.Insert(ifr.ImageName, ifr.ImageFormat, mimeType, ifr.Username, ip, ifr.Client, ifr.Hidden)
 		if err != nil {
 			log.Errorf("Error while inserting image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
+			output(w, InsertResponse{
+				Success:        false,
+				Status:         "database-error",
+				StatusReadable: "An internal server error occurred while attempting to save image information to the database.",
+			}, http.StatusInternalServerError)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -282,7 +287,11 @@ func insert(w http.ResponseWriter, r *http.Request) {
 		err = database.Update(ifr.ImageName, ifr.ImageFormat, mimeType, ip, ifr.Client, ifr.Hidden)
 		if err != nil {
 			log.Errorf("Error while updating data of image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
-			w.WriteHeader(http.StatusInternalServerError)
+			output(w, InsertResponse{
+				Success:        false,
+				Status:         "database-error",
+				StatusReadable: "An internal server error occurred while attempting to save image information to the database.",
+			}, http.StatusInternalServerError)
 			return
 		}
 		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (replaced).", ifr.Username, ip, ifr.ImageName)
