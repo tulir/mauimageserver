@@ -229,7 +229,11 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	owner := database.GetOwner(ifr.ImageName)
 	if len(owner) > 0 {
 		if owner != ifr.Username || ifr.Username == "anonymous" {
-			if !output(w, InsertResponse{Success: false, Status: "already-exists", StatusReadable: "The requested image name is already in use by another user"}, http.StatusForbidden) {
+			if !output(w, InsertResponse{
+				Success:        false,
+				Status:         "already-exists",
+				StatusReadable: "The requested image name is already in use by another user",
+			}, http.StatusForbidden) {
 				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
 			}
 			log.Debugf("%[1]s@%[2]s attempted to override an image uploaded by %[3]s.", ifr.Username, ip, owner)
@@ -241,7 +245,8 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	// Decode the base64 image from the JSON request.
 	image, err := base64.StdEncoding.DecodeString(ifr.Image)
 	if err != nil {
-		if !output(w, InsertResponse{Success: false, Status: "invalid-image-encoding", StatusReadable: "The given image is not properly encoded in base64."}, http.StatusUnsupportedMediaType) {
+		if !output(w, InsertResponse{Success: false, Status: "invalid-image-encoding",
+			StatusReadable: "The given image is not properly encoded in base64."}, http.StatusUnsupportedMediaType) {
 			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
 		}
 		log.Errorf("Error while decoding image from %[1]s@%[2]s: %[3]s", ifr.Username, ip, err)
@@ -251,7 +256,11 @@ func insert(w http.ResponseWriter, r *http.Request) {
 	mimeType := http.DetectContentType(image)
 
 	if !strings.HasPrefix(mimeType, "image/") {
-		if !output(w, InsertResponse{Success: false, Status: "invalid-mime", StatusReadable: "The uploaded data is of an incorrect MIME type."}, http.StatusUnsupportedMediaType) {
+		if !output(w, InsertResponse{
+			Success:        false,
+			Status:         "invalid-mime",
+			StatusReadable: "The uploaded data is of an incorrect MIME type.",
+		}, http.StatusUnsupportedMediaType) {
 			log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, ifr.Username, err)
 		}
 		return
@@ -340,7 +349,11 @@ func hide(w http.ResponseWriter, r *http.Request) {
 	if len(owner) > 0 {
 		if owner != hfr.Username {
 			log.Debugf("%[1]s@%[2]s attempted to hide an image uploaded by %[3]s.", hfr.Username, ip, owner)
-			if !output(w, InsertResponse{Success: false, Status: "no-permissions", StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden) {
+			if !output(w, InsertResponse{
+				Success:        false,
+				Status:         "no-permissions",
+				StatusReadable: "The image you requested to be deleted was not uploaded by you.",
+			}, http.StatusForbidden) {
 				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, hfr.Username, err)
 			}
 			return
@@ -415,7 +428,8 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	if len(owner) > 0 {
 		if owner != dfr.Username {
 			log.Debugf("%[1]s@%[2]s attempted to delete an image uploaded by %[3]s.", dfr.Username, ip, owner)
-			if !output(w, InsertResponse{Success: false, Status: "no-permissions", StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden) {
+			if !output(w, InsertResponse{Success: false, Status: "no-permissions",
+				StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden) {
 				log.Errorf("Failed to marshal output json to %[1]s@%[2]s: %[3]s", ip, dfr.Username, err)
 			}
 			return
