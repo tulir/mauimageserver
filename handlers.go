@@ -409,17 +409,16 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	owner := database.GetOwner(dfr.ImageName)
-	if len(owner) > 0 {
-		if owner != dfr.Username {
-			log.Debugf("%[1]s@%[2]s attempted to delete an image uploaded by %[3]s.", dfr.Username, ip, owner)
-			output(w, InsertResponse{Success: false, Status: "no-permissions",
-				StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden)
-			return
-		}
-	} else {
-		log.Debugf("%[1]s@%[2]s attempted to delete an image that doesn't exist.", dfr.Username, ip, owner)
+	data, err := database.Query(dfr.ImageName)
+	if err != nil {
+		log.Debugf("%[1]s@%[2]s attempted to delete an image that doesn't exist.", dfr.Username, ip, data.Adder)
 		output(w, InsertResponse{Success: false, Status: "not-found", StatusReadable: "The image you requested to be deleted does not exist."}, http.StatusNotFound)
+		return
+	}
+	if data.Adder != dfr.Username {
+		log.Debugf("%[1]s@%[2]s attempted to delete an image uploaded by %[3]s.", dfr.Username, ip, data.Adder)
+		output(w, InsertResponse{Success: false, Status: "no-permissions",
+			StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden)
 		return
 	}
 
@@ -429,7 +428,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	err = os.Remove(config.ImageLocation + "/" + dfr.ImageName + ".png")
+	err = os.Remove(config.ImageLocation + "/" + dfr.ImageName + "." + data.Format)
 	if err != nil {
 		// If the file just didn't exist, warn about the error. If the error was something else, cancel.
 		if strings.HasSuffix(err.Error(), "no such file or directory") {
