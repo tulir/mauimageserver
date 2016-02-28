@@ -292,15 +292,6 @@ func TestHide(t *testing.T) {
 		database: fakeDatabase{imageOwner: "fakeUser"},
 	}}
 
-	/*{ TODO: Create a test case that makes os.Remove throw an error other than no such file or directory.
-		request:  "{\"image-name\":\"fake/Image\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
-		status:   http.StatusInternalServerError,
-		expected: nil,
-		config:   &data.Configuration{ImageLocation: "/tmp"},
-		auth:     fakeAuth{},
-		database: fakeDatabase{imageOwner: "fakeUser"},
-	},*/
-
 	for index, c := range cases {
 		runTest(index+1, c, t)
 	}
