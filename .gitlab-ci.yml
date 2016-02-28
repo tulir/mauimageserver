@@ -6,6 +6,7 @@ before_script:
 - "go get -u github.com/go-sql-driver/mysql"
 - "go get -u github.com/ogier/pflag"
 - "ln -s /builds/Tulir293/mis2 /go/src/maunium.net/go/mauimageserver"
+- "cd /go/src/maunium.net/go/mauimageserver"
 
 stages:
 - build
@@ -29,6 +30,7 @@ build:
 
 test:
     script:
+    - "ln -s /builds/Tulir293/mis2 /go/src/maunium.net/go/mauimageserver"
     - "go test -coverprofile=coverage.out"
     - "go tool cover -html=coverage.out -o coverage.html"
     - "rm -f coverage.out"
