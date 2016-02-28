@@ -28,6 +28,7 @@ var image = "iVBORw0KGgoAAAANSUhEUgAAABUAAAARCAIAAAC95HDXAAAAFklEQVR42mP4ThlgGNU
 
 func TestInsert(t *testing.T) {
 	log.InitWithWriter(nil)
+	log.PrintLevel = 9002
 	cases := []test{
 		{
 			action: "GET", path: "/insert",
@@ -164,6 +165,7 @@ func TestInsert(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	log.InitWithWriter(nil)
+	log.PrintLevel = 9002
 	cases := []test{
 		{
 			action: "GET", path: "/delete",
