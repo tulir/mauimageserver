@@ -13,9 +13,9 @@ stages:
 
 build:
     script:
-    - "env GOOS=linux GOARCH=amd64 go build maunium.net/go/mauimageserver -o mauimageserver_amd64"
-    - "env GOOS=linux GOARCH=arm go build maunium.net/go/mauimageserver -o mauimageserver_arm"
-    - "env GOOS=windows GOARCH=amd64 go build maunium.net/go/mauimageserver -o mauimageserver_amd64.exe"
+    - "env GOOS=linux GOARCH=amd64 go build -o mauimageserver_amd64 maunium.net/go/mauimageserver"
+    - "env GOOS=linux GOARCH=arm go build -o mauimageserver_arm maunium.net/go/mauimageserver"
+    - "env GOOS=windows GOARCH=amd64 go build -o mauimageserver_amd64.exe maunium.net/go/mauimageserver"
     stage: build
     tags:
     - golang
