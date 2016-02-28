@@ -199,7 +199,7 @@ func TestDelete(t *testing.T) {
 			expected: &InsertResponse{Success: false, Status: "no-permissions"},
 			config:   &data.Configuration{ImageLocation: "/tmp"},
 			auth:     fakeAuth{},
-			database: fakeDatabase{imageOwner: "fakeUser2"},
+			database: fakeDatabase{queryImage: data.ImageEntry{ImageName: "image", Format: "png", Adder: "fakeUser2"}},
 		},
 		{
 			action: "POST", path: "/delete",
@@ -208,7 +208,7 @@ func TestDelete(t *testing.T) {
 			expected: &InsertResponse{Success: false, Status: "not-found"},
 			config:   &data.Configuration{ImageLocation: "/tmp"},
 			auth:     fakeAuth{},
-			database: fakeDatabase{},
+			database: fakeDatabase{queryError: errors.New("asd")},
 		},
 		{
 			action: "POST", path: "/delete",
@@ -217,7 +217,7 @@ func TestDelete(t *testing.T) {
 			expected: nil,
 			config:   &data.Configuration{ImageLocation: "/tmp"},
 			auth:     fakeAuth{},
-			database: fakeDatabase{imageOwner: "fakeUser", removeError: errors.New("fakeError")},
+			database: fakeDatabase{queryImage: data.ImageEntry{ImageName: "image", Format: "png", Adder: "fakeUser"}, removeError: errors.New("fakeError")},
 		},
 		/*{ TODO: Create a test case that makes os.Remove throw an error other than no such file or directory.
 			request:  "{\"image-name\":\"fake/Image\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
@@ -234,7 +234,7 @@ func TestDelete(t *testing.T) {
 			expected: &InsertResponse{Success: true, Status: "deleted"},
 			config:   &data.Configuration{ImageLocation: "/"},
 			auth:     fakeAuth{},
-			database: fakeDatabase{imageOwner: "fakeUser"},
+			database: fakeDatabase{queryImage: data.ImageEntry{ImageName: "image", Format: "png", Adder: "fakeUser"}},
 		},
 	}
 
