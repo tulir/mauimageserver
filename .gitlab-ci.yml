@@ -1,24 +1,40 @@
 image: golang:1.6
 
 before_script:
-  - "go get -u maunium.net/go/mauth"
-  - "go get -u maunium.net/go/maulogger"
-  - "go get -u github.com/go-sql-driver/mysql"
-  - "go get -u github.com/ogier/pflag"
-  - "ln -s /builds/Tulir293/mis2 /go/src/maunium.net/go/mauimageserver"
+- "go get -u maunium.net/go/mauth"
+- "go get -u maunium.net/go/maulogger"
+- "go get -u github.com/go-sql-driver/mysql"
+- "go get -u github.com/ogier/pflag"
+- "ln -s /builds/Tulir293/mis2 /go/src/maunium.net/go/mauimageserver"
+
+stages:
+- build
+- test
 
 build:
-  script:
+    script:
     - "env GOOS=linux GOARCH=amd64 go build -o mauimageserver_amd64"
     - "env GOOS=linux GOARCH=arm go build -o mauimageserver_arm"
     - "env GOOS=windows GOARCH=amd64 go build -o mauimageserver_amd64.exe"
-  stage: build
-  tags:
+    stage: build
+    tags:
     - golang
-  artifacts:
-    paths:
-    - mauimageserver_amd64
-    - mauimageserver_arm
-    - mauimageserver_amd64.exe
-    - config.json
-    - LICENSE
+    artifacts:
+        paths:
+        - mauimageserver_amd64
+        - mauimageserver_arm
+        - mauimageserver_amd64.exe
+        - config.json
+        - LICENSE
+
+test:
+    script:
+    - "go test -coverprofile=coverage.out"
+    - "go tool cover -html=coverage.out -o coverage.html"
+    - "rm -f coverage.out"
+    stage: test
+    tags:
+    - golang
+    artifacts:
+        paths:
+        - coverage.html
