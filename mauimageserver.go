@@ -55,7 +55,9 @@ func main() {
 	}
 
 	// Configure the logger
-	log.PrintDebug = *debug
+	if *debug {
+		log.PrintLevel = 0
+	}
 	log.Fileformat = func(date string, i int) string { return fmt.Sprintf("logs/%[1]s-%02[2]d.log", date, i) }
 	// Initialize the logger
 	log.Init()
