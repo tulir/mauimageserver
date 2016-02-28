@@ -1,4 +1,6 @@
 # mauImageServer
+![Build Status](https://git.maunium.net/Tulir293/mis2/badges/master/build.svg)
+
 ## Introduction
 mauImageServer is a simple image hosting and sharing backend designed to be used with [mauCapture](https://git.maunium.net/Tulir293/maucapture2). It uses [mAuth](https://git.maunium.net/Tulir293/mauth) for authentication. It has a basic search function
 
