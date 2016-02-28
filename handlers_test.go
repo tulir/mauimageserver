@@ -143,8 +143,8 @@ func TestInsert(t *testing.T) {
 		database: fakeDatabase{updateError: errors.New("fakeError"), imageOwner: "fakeUser"},
 	}}
 
-	for _, c := range cases {
-		runTest(c, t)
+	for index, c := range cases {
+		runTest(index+1, c, t)
 	}
 }
 
@@ -218,12 +218,95 @@ func TestDelete(t *testing.T) {
 		database: fakeDatabase{imageOwner: "fakeUser"},
 	},*/
 
-	for _, c := range cases {
-		runTest(c, t)
+	for index, c := range cases {
+		runTest(index+1, c, t)
 	}
 }
 
-func runTest(c test, t *testing.T) {
+func TestHide(t *testing.T) {
+	log.InitWithWriter(nil)
+	log.PrintLevel = 9002
+	cases := []test{{
+		action: "GET", path: "/hide",
+		request:  "",
+		status:   http.StatusMethodNotAllowed,
+		expected: nil,
+		config:   &data.Configuration{},
+		auth:     fakeAuth{},
+		database: fakeDatabase{},
+	}, {
+		action: "POST", path: "/hide",
+		request:  "{\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\",\"hidden\": true}",
+		status:   http.StatusBadRequest,
+		expected: nil,
+		config:   &data.Configuration{ImageLocation: "/tmp"},
+		auth:     fakeAuth{},
+		database: fakeDatabase{},
+	}, {
+		action: "POST", path: "/hide",
+		request:  "{\"image-name\":\"fakeImage\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\",\"hidden\": true}",
+		status:   http.StatusUnauthorized,
+		expected: &InsertResponse{Success: false, Status: "invalid-authtoken"},
+		config:   &data.Configuration{ImageLocation: "/tmp"},
+		auth:     fakeAuth{authTokenError: errors.New("fakeError")},
+		database: fakeDatabase{},
+	}, {
+		action: "POST", path: "/hide",
+		request:  "{\"image-name\":\"fakeImage\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\",\"hidden\": true}",
+		status:   http.StatusForbidden,
+		expected: &InsertResponse{Success: false, Status: "no-permissions"},
+		config:   &data.Configuration{ImageLocation: "/tmp"},
+		auth:     fakeAuth{},
+		database: fakeDatabase{imageOwner: "fakeUser2"},
+	}, {
+		action: "POST", path: "/hide",
+		request:  "{\"image-name\":\"fakeImage\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\",\"hidden\": true}",
+		status:   http.StatusNotFound,
+		expected: &InsertResponse{Success: false, Status: "not-found"},
+		config:   &data.Configuration{ImageLocation: "/tmp"},
+		auth:     fakeAuth{},
+		database: fakeDatabase{},
+	}, {
+		action: "POST", path: "/hide",
+		request:  "{\"image-name\":\"fakeImage\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\",\"hidden\": true}",
+		status:   http.StatusInternalServerError,
+		expected: nil,
+		config:   &data.Configuration{ImageLocation: "/tmp"},
+		auth:     fakeAuth{},
+		database: fakeDatabase{imageOwner: "fakeUser", hideError: errors.New("fakeError")},
+	}, {
+		action: "POST", path: "/hide",
+		request:  "{\"image-name\":\"fakeImage\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\",\"hidden\": true}",
+		status:   http.StatusAccepted,
+		expected: &InsertResponse{Success: true, Status: "hidden"},
+		config:   &data.Configuration{ImageLocation: "/tmp"},
+		auth:     fakeAuth{},
+		database: fakeDatabase{imageOwner: "fakeUser"},
+	}, {
+		action: "POST", path: "/hide",
+		request:  "{\"image-name\":\"fakeImage\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\",\"hidden\": false}",
+		status:   http.StatusAccepted,
+		expected: &InsertResponse{Success: true, Status: "unhidden"},
+		config:   &data.Configuration{ImageLocation: "/tmp"},
+		auth:     fakeAuth{},
+		database: fakeDatabase{imageOwner: "fakeUser"},
+	}}
+
+	/*{ TODO: Create a test case that makes os.Remove throw an error other than no such file or directory.
+		request:  "{\"image-name\":\"fake/Image\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
+		status:   http.StatusInternalServerError,
+		expected: nil,
+		config:   &data.Configuration{ImageLocation: "/tmp"},
+		auth:     fakeAuth{},
+		database: fakeDatabase{imageOwner: "fakeUser"},
+	},*/
+
+	for index, c := range cases {
+		runTest(index+1, c, t)
+	}
+}
+
+func runTest(index int, c test, t *testing.T) {
 	database = c.database
 	auth = c.auth
 	config = c.config
@@ -240,11 +323,13 @@ func runTest(c test, t *testing.T) {
 		insert(recorder, req)
 	} else if c.path == "/delete" {
 		delete(recorder, req)
+	} else if c.path == "/hide" {
+		hide(recorder, req)
 	}
 
 	if c.expected == nil {
 		if recorder.Code != c.status {
-			t.Errorf("Status code didn't match! Expected %d, but received %d", c.status, recorder.Code)
+			t.Errorf("[%s #%d] Status code didn't match! Expected %d, but received %d", c.path, index, c.status, recorder.Code)
 		}
 		return
 	}
@@ -253,13 +338,13 @@ func runTest(c test, t *testing.T) {
 	err = json.Unmarshal(recorder.Body.Bytes(), &received)
 
 	if err != nil {
-		t.Errorf("Response JSON invalid: %s", err)
+		t.Errorf("[%s #%d] Response JSON invalid: %s", c.path, index, err)
 	} else if recorder.Code != c.status {
-		t.Errorf("Status code didn't match! Expected %d, but received %d", c.status, recorder.Code)
+		t.Errorf("[%s #%d] Status code didn't match! Expected %d, but received %d", c.path, index, c.status, recorder.Code)
 	} else if received.Success != c.expected.Success {
-		t.Errorf("Success value didn't match! Expected %b, but received %b", c.expected.Success, received.Success)
+		t.Errorf("[%s #%d] Success value didn't match! Expected %b, but received %b", c.path, index, c.expected.Success, received.Success)
 	} else if received.Status != c.expected.Status {
-		t.Errorf("Status message didn't match! Expected %s, but received %s", c.expected.Status, received.Status)
+		t.Errorf("[%s #%d] Status message didn't match! Expected %s, but received %s", c.path, index, c.expected.Status, received.Status)
 	}
 }
 
