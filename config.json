@@ -1,6 +1,5 @@
 {
     "image-location": "/var/mis",
-    "favicon": "favicon.ico",
     "date-format": "15:04:05 02.01.2006 MST",
     "require-auth": true,
     "trust-headers": false,
