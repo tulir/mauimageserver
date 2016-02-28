@@ -6,7 +6,6 @@ before_script:
 - "go get -u github.com/go-sql-driver/mysql"
 - "go get -u github.com/ogier/pflag"
 - "ln -s /builds/Tulir293/mis2 /go/src/maunium.net/go/mauimageserver"
-- "cd /go/src/maunium.net/go/mauimageserver"
 
 stages:
 - build
@@ -14,9 +13,9 @@ stages:
 
 build:
     script:
-    - "env GOOS=linux GOARCH=amd64 go build -o mauimageserver_amd64"
-    - "env GOOS=linux GOARCH=arm go build -o mauimageserver_arm"
-    - "env GOOS=windows GOARCH=amd64 go build -o mauimageserver_amd64.exe"
+    - "env GOOS=linux GOARCH=amd64 go build maunium.net/go/mauimageserver -o mauimageserver_amd64"
+    - "env GOOS=linux GOARCH=arm go build maunium.net/go/mauimageserver -o mauimageserver_arm"
+    - "env GOOS=windows GOARCH=amd64 go build maunium.net/go/mauimageserver -o mauimageserver_amd64.exe"
     stage: build
     tags:
     - golang
@@ -28,15 +27,38 @@ build:
         - config.json
         - LICENSE
 
-test:
+test-main:
     script:
-    - "ln -s /builds/Tulir293/mis2 /go/src/maunium.net/go/mauimageserver"
-    - "go test -coverprofile=coverage.out"
-    - "go tool cover -html=coverage.out -o coverage.html"
+    - "go test maunium.net/go/mauimageserver -coverprofile=coverage.out"
+    - "go tool cover -html=coverage.out -o coverage-main.html"
     - "rm -f coverage.out"
     stage: test
     tags:
     - golang
     artifacts:
         paths:
-        - coverage.html
+        - coverage-main.html
+
+test-handlers:
+    script:
+    - "go test maunium.net/go/mauimageserver/handlers -coverprofile=coverage.out"
+    - "go tool cover -html=coverage.out -o coverage-handlers.html"
+    - "rm -f coverage.out"
+    stage: test
+    tags:
+    - golang
+    artifacts:
+        paths:
+        - coverage-handlers.html
+
+test-data:
+    script:
+    - "go test maunium.net/go/mauimageserver/data -coverprofile=coverage.out"
+    - "go tool cover -html=coverage.out -o coverage-data.html"
+    - "rm -f coverage.out"
+    stage: test
+    tags:
+    - golang
+    artifacts:
+        paths:
+        - coverage-data.html

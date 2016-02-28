@@ -20,6 +20,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	flag "github.com/ogier/pflag"
 	"maunium.net/go/mauimageserver/data"
+	"maunium.net/go/mauimageserver/handlers"
 	log "maunium.net/go/maulogger"
 	"maunium.net/go/mauth"
 	"net/http"
@@ -67,14 +68,16 @@ func main() {
 	loadDatabase()
 	loadTemplates()
 
+	handlers.Init(config, database, auth)
+
 	log.Infof("Registering handlers")
-	http.HandleFunc("/auth/login", login)
-	http.HandleFunc("/auth/register", register)
-	http.HandleFunc("/insert", insert)
-	http.HandleFunc("/delete", delete)
-	http.HandleFunc("/hide", hide)
-	http.HandleFunc("/search", search)
-	http.HandleFunc("/", get)
+	http.HandleFunc("/auth/login", handlers.Login)
+	http.HandleFunc("/auth/register", handlers.Register)
+	http.HandleFunc("/insert", handlers.Insert)
+	http.HandleFunc("/delete", handlers.Delete)
+	http.HandleFunc("/hide", handlers.Hide)
+	http.HandleFunc("/search", handlers.Search)
+	http.HandleFunc("/", handlers.Get)
 	log.Infof("Listening on %s:%d", config.IP, config.Port)
 	http.ListenAndServe(config.IP+":"+strconv.Itoa(config.Port), nil)
 }

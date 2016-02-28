@@ -16,64 +16,11 @@
 package main
 
 import (
-	"encoding/json"
-	"math/rand"
 	"maunium.net/go/mauimageserver/data"
 	log "maunium.net/go/maulogger"
 	"maunium.net/go/mauth"
-	"net/http"
 	"os"
-	"strings"
-	"time"
 )
-
-func getIP(r *http.Request) string {
-	if config.TrustHeaders {
-		return r.Header.Get("X-Forwarded-For")
-	}
-	return strings.Split(r.RemoteAddr, ":")[0]
-}
-
-func output(w http.ResponseWriter, response interface{}, status int) bool {
-	// Marshal the response
-	json, err := json.Marshal(response)
-	// Check if there was an error marshaling the response.
-	if err != nil {
-		// Write internal server error status.
-		w.WriteHeader(http.StatusInternalServerError)
-		return false
-	}
-	w.WriteHeader(status)
-	w.Write(json)
-	return true
-}
-
-const imageNameAC = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
-const (
-	letterIdxBits = 6
-	letterIdxMask = 1<<letterIdxBits - 1
-	letterIdxMax  = 63 / letterIdxBits
-)
-
-var src = rand.NewSource(time.Now().UnixNano())
-
-// ImageName generates a string matching [a-zA-Z0-9]{length}
-func ImageName(length int) string {
-	b := make([]byte, length)
-	for i, cache, remain := 4, src.Int63(), letterIdxMax; i >= 0; {
-		if remain == 0 {
-			cache, remain = src.Int63(), letterIdxMax
-		}
-		if idx := int(cache & letterIdxMask); idx < len(imageNameAC) {
-			b[i] = imageNameAC[idx]
-			i--
-		}
-		cache >>= letterIdxBits
-		remain--
-	}
-
-	return string(b)
-}
 
 func loadConfig() {
 	log.Infof("Loading config...")

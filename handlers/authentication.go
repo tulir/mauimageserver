@@ -13,14 +13,17 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package main
+
+// Package handlers contains the MIS-specific HTTP request handlers
+package handlers
 
 import (
 	log "maunium.net/go/maulogger"
 	"net/http"
 )
 
-func login(w http.ResponseWriter, r *http.Request) {
+// Login handles requests to /auth/login
+func Login(w http.ResponseWriter, r *http.Request) {
 	var ip = getIP(r)
 	errdata, err := auth.LoginHTTP(w, r)
 	if err != nil {
@@ -39,7 +42,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func register(w http.ResponseWriter, r *http.Request) {
+// Register handles requests to /auth/register
+func Register(w http.ResponseWriter, r *http.Request) {
 	var ip = getIP(r)
 	errdata, err := auth.RegisterHTTP(w, r)
 	if err != nil {
