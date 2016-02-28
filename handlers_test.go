@@ -297,6 +297,76 @@ func TestHide(t *testing.T) {
 	}
 }
 
+func TestSearch(t *testing.T) {
+	log.InitWithWriter(nil)
+	log.PrintLevel = 9002
+	cases := []test{{
+		action: "GET", path: "/search",
+		request:  "",
+		status:   http.StatusMethodNotAllowed,
+		expected: nil,
+		config:   &data.Configuration{},
+		auth:     fakeAuth{},
+		database: fakeDatabase{},
+	}, {
+		action: "POST", path: "/search",
+		request:  "{}",
+		status:   http.StatusForbidden,
+		expected: nil,
+		config:   &data.Configuration{AllowSearch: false},
+		auth:     fakeAuth{},
+		database: fakeDatabase{},
+	}, {
+		action: "POST", path: "/search",
+		request:  "{}",
+		status:   http.StatusBadRequest,
+		expected: nil,
+		config:   &data.Configuration{AllowSearch: true},
+		auth:     fakeAuth{},
+		database: fakeDatabase{},
+	}, {
+		action: "POST", path: "/search",
+		request:  "{\"uploaded-after\": 12345}",
+		status:   http.StatusInternalServerError,
+		expected: nil,
+		config:   &data.Configuration{AllowSearch: true},
+		auth:     fakeAuth{},
+		database: fakeDatabase{searchError: errors.New("fakeError")},
+	}}
+
+	for index, c := range cases {
+		runTest(index+1, c, t)
+	}
+
+	var expected = []data.ImageEntry{{ImageName: "asd"}, {ImageName: "dsa"}}
+
+	database = fakeDatabase{searchImages: expected}
+	auth = fakeAuth{}
+	config = &data.Configuration{AllowSearch: true}
+
+	req, err := http.NewRequest("POST", "/search", strings.NewReader("{\"uploaded-before\": 12345}"))
+	if err != nil {
+		t.Fatalf("Request error: %s", err)
+	}
+	req.RemoteAddr = "fakeIP"
+
+	var recorder = httptest.NewRecorder()
+
+	search(recorder, req)
+
+	var received []data.ImageEntry
+	err = json.Unmarshal(recorder.Body.Bytes(), &received)
+	if len(received) != len(expected) {
+		t.Errorf("Number of results didn't match! Expected %d, but received %d", len(expected), len(received))
+	} else {
+		for i := 0; i < len(received); i++ {
+			if received[i].ImageName != expected[i].ImageName {
+				t.Errorf("Image name of result #%d didn't match! Expected %s, but received %s", i, expected[i].ImageName, received[i].ImageName)
+			}
+		}
+	}
+}
+
 func runTest(index int, c test, t *testing.T) {
 	database = c.database
 	auth = c.auth
@@ -316,6 +386,8 @@ func runTest(index int, c test, t *testing.T) {
 		delete(recorder, req)
 	} else if c.path == "/hide" {
 		hide(recorder, req)
+	} else if c.path == "/search" {
+		search(recorder, req)
 	}
 
 	if c.expected == nil {
