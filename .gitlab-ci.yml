@@ -27,17 +27,17 @@ build:
         - config.json
         - LICENSE
 
-test-main:
-    script:
-    - "go test maunium.net/go/mauimageserver -coverprofile=coverage.out"
-    - "go tool cover -html=coverage.out -o coverage-main.html"
-    - "rm -f coverage.out"
-    stage: test
-    tags:
-    - golang
-    artifacts:
-        paths:
-        - coverage-main.html
+#test-main:
+#    script:
+#    - "go test maunium.net/go/mauimageserver -coverprofile=coverage.out"
+#    - "go tool cover -html=coverage.out -o coverage-main.html"
+#    - "rm -f coverage.out"
+#    stage: test
+#    tags:
+#    - golang
+#    artifacts:
+#        paths:
+#        - coverage-main.html
 
 test-handlers:
     script:
@@ -51,14 +51,14 @@ test-handlers:
         paths:
         - coverage-handlers.html
 
-test-data:
-    script:
-    - "go test maunium.net/go/mauimageserver/data -coverprofile=coverage.out"
-    - "go tool cover -html=coverage.out -o coverage-data.html"
-    - "rm -f coverage.out"
-    stage: test
-    tags:
-    - golang
-    artifacts:
-        paths:
-        - coverage-data.html
+#test-data:
+#    script:
+#    - "go test maunium.net/go/mauimageserver/data -coverprofile=coverage.out"
+#    - "go tool cover -html=coverage.out -o coverage-data.html"
+#    - "rm -f coverage.out"
+#    stage: test
+#    tags:
+#    - golang
+#    artifacts:
+#        paths:
+#        - coverage-data.html
