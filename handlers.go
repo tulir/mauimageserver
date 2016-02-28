@@ -369,7 +369,7 @@ func hide(w http.ResponseWriter, r *http.Request) {
 		hid = "unhidden"
 	}
 
-	log.Debugf("%[1]s@%[2]s successfully changed hidden status to %[4]b of the image with the name %[3]s.", hfr.Username, ip, hfr.ImageName, hfr.Hidden)
+	log.Debugf("%[1]s@%[2]s successfully changed hidden status to %[4]t of the image with the name %[3]s.", hfr.Username, ip, hfr.ImageName, hfr.Hidden)
 	output(w, InsertResponse{
 		Success:        true,
 		Status:         hid,
