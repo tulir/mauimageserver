@@ -13,7 +13,9 @@ import (
 	"testing"
 )
 
-type insertTest struct {
+type test struct {
+	action   string
+	path     string
 	request  string
 	status   int
 	expected *InsertResponse
@@ -26,228 +28,258 @@ var image = "iVBORw0KGgoAAAANSUhEUgAAABUAAAARCAIAAAC95HDXAAAAFklEQVR42mP4ThlgGNU
 
 func TestInsert(t *testing.T) {
 	log.InitWithWriter(nil)
-	// The cases before json parsing has succeeded
-	{
-		config = &data.Configuration{}
-		req, err := http.NewRequest("GET", "/insert", nil)
-		if err != nil {
-			t.Fatalf("Request error: %s", err)
-		}
-		req.RemoteAddr = "fakeIP"
-		var recorder = httptest.NewRecorder()
-		insert(recorder, req)
-		if recorder.Code != http.StatusMethodNotAllowed {
-			t.Errorf("Status code didn't match! Expected %d, but received %d", http.StatusMethodNotAllowed, recorder.Code)
-		}
-	}
-
-	cases := []insertTest{
+	cases := []test{
 		{
+			action: "GET", path: "/insert",
+			request:  "",
+			status:   http.StatusMethodNotAllowed,
+			expected: nil,
+			config:   &data.Configuration{},
+			auth:     fakeAuth{},
+			database: fakeDatabase{},
+		},
+		{
+			action: "POST", path: "/insert",
 			request:  "{}",
 			status:   http.StatusBadRequest,
 			expected: nil,
 			config:   &data.Configuration{},
-			auth:     fakeAuth{registerStr: "", loginStr: "", registerError: nil, loginError: nil, authTokenError: nil},
+			auth:     fakeAuth{},
 			database: fakeDatabase{},
 		},
 		{
+			action: "POST", path: "/insert",
 			request:  "{\"image\": \"" + image + "\"}",
 			status:   http.StatusCreated,
 			expected: &InsertResponse{Success: true, Status: "created"},
 			config:   &data.Configuration{RequireAuth: false, ImageLocation: "/tmp"},
-			auth:     fakeAuth{registerStr: "", loginStr: "", registerError: nil, loginError: nil, authTokenError: nil},
+			auth:     fakeAuth{},
 			database: fakeDatabase{},
 		},
 		{
+			action: "POST", path: "/insert",
 			request:  "{\"image\": \"" + image + "\"}",
 			status:   http.StatusUnauthorized,
 			expected: &InsertResponse{Success: false, Status: "not-logged-in"},
 			config:   &data.Configuration{RequireAuth: true, ImageLocation: "/tmp"},
-			auth:     fakeAuth{registerStr: "", loginStr: "", registerError: nil, loginError: nil, authTokenError: nil},
+			auth:     fakeAuth{},
 			database: fakeDatabase{},
 		},
 		{
+			action: "POST", path: "/insert",
 			request:  "{\"image\": \"" + image + "\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
 			status:   http.StatusUnauthorized,
 			expected: &InsertResponse{Success: false, Status: "invalid-authtoken"},
 			config:   &data.Configuration{RequireAuth: true, ImageLocation: "/tmp"},
-			auth:     fakeAuth{registerStr: "", loginStr: "", registerError: nil, loginError: nil, authTokenError: errors.New("fakeError")},
+			auth:     fakeAuth{authTokenError: errors.New("fakeError")},
 			database: fakeDatabase{},
 		},
 		{
+			action: "POST", path: "/insert",
 			request:  "{\"image\": \"" + image + "\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
 			status:   http.StatusForbidden,
 			expected: &InsertResponse{Success: false, Status: "already-exists"},
 			config:   &data.Configuration{RequireAuth: true, ImageLocation: "/tmp"},
-			auth:     fakeAuth{registerStr: "", loginStr: "", registerError: nil, loginError: nil, authTokenError: nil},
+			auth:     fakeAuth{},
 			database: fakeDatabase{imageOwner: "fakeUser2"},
 		},
 		{
+			action: "POST", path: "/insert",
 			request:  "{\"image\": \"" + image + "\"}",
 			status:   http.StatusForbidden,
 			expected: &InsertResponse{Success: false, Status: "already-exists"},
 			config:   &data.Configuration{RequireAuth: false, ImageLocation: "/tmp"},
-			auth:     fakeAuth{registerStr: "", loginStr: "", registerError: nil, loginError: nil, authTokenError: nil},
+			auth:     fakeAuth{},
 			database: fakeDatabase{imageOwner: "fakeUser"},
 		},
 		{
+			action: "POST", path: "/insert",
 			request:  "{\"image\": \"ZmFrZUltYWdlDQo=\"}",
 			status:   http.StatusUnsupportedMediaType,
 			expected: &InsertResponse{Success: false, Status: "invalid-mime"},
 			config:   &data.Configuration{RequireAuth: false, ImageLocation: "/tmp"},
-			auth:     fakeAuth{registerStr: "", loginStr: "", registerError: nil, loginError: nil, authTokenError: nil},
+			auth:     fakeAuth{},
 			database: fakeDatabase{},
 		},
 		{
+			action: "POST", path: "/insert",
 			request:  "{\"image\": \"" + image + "\",\"image-name\":\"as>?¿d/das\"}",
 			status:   http.StatusInternalServerError,
 			expected: nil,
 			config:   &data.Configuration{RequireAuth: false, ImageLocation: "/tmp"},
-			auth:     fakeAuth{registerStr: "", loginStr: "", registerError: nil, loginError: nil, authTokenError: nil},
+			auth:     fakeAuth{},
 			database: fakeDatabase{},
 		},
 		{
+			action: "POST", path: "/insert",
 			request:  "{\"image\": \"totallyBase64\"}",
 			status:   http.StatusUnsupportedMediaType,
 			expected: &InsertResponse{Success: false, Status: "invalid-image-encoding"},
 			config:   &data.Configuration{RequireAuth: false, ImageLocation: "/tmp"},
-			auth:     fakeAuth{registerStr: "", loginStr: "", registerError: nil, loginError: nil, authTokenError: nil},
+			auth:     fakeAuth{},
 			database: fakeDatabase{},
 		},
 		{
+			action: "POST", path: "/insert",
 			request:  "{\"image\": \"" + image + "\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
 			status:   http.StatusCreated,
 			expected: &InsertResponse{Success: true, Status: "created"},
 			config:   &data.Configuration{RequireAuth: true, ImageLocation: "/tmp"},
-			auth:     fakeAuth{registerStr: "", loginStr: "", registerError: nil, loginError: nil, authTokenError: nil},
+			auth:     fakeAuth{},
 			database: fakeDatabase{},
 		},
 		{
+			action: "POST", path: "/insert",
 			request:  "{\"image\": \"" + image + "\"}",
 			status:   http.StatusInternalServerError,
 			expected: &InsertResponse{Success: false, Status: "database-error"},
 			config:   &data.Configuration{RequireAuth: false, ImageLocation: "/tmp"},
-			auth:     fakeAuth{registerStr: "", loginStr: "", registerError: nil, loginError: nil, authTokenError: nil},
+			auth:     fakeAuth{},
 			database: fakeDatabase{insertError: errors.New("fakeError")},
 		},
 		{
+			action: "POST", path: "/insert",
 			request:  "{\"image\": \"" + image + "\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
 			status:   http.StatusAccepted,
 			expected: &InsertResponse{Success: true, Status: "replaced"},
 			config:   &data.Configuration{RequireAuth: true, ImageLocation: "/tmp"},
-			auth:     fakeAuth{registerStr: "", loginStr: "", registerError: nil, loginError: nil, authTokenError: nil},
+			auth:     fakeAuth{},
 			database: fakeDatabase{imageOwner: "fakeUser"},
 		},
 		{
+			action: "POST", path: "/insert",
 			request:  "{\"image\": \"" + image + "\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
 			status:   http.StatusInternalServerError,
 			expected: &InsertResponse{Success: false, Status: "database-error"},
 			config:   &data.Configuration{RequireAuth: true, ImageLocation: "/tmp"},
-			auth:     fakeAuth{registerStr: "", loginStr: "", registerError: nil, loginError: nil, authTokenError: nil},
+			auth:     fakeAuth{},
 			database: fakeDatabase{updateError: errors.New("fakeError"), imageOwner: "fakeUser"},
 		},
 	}
 
 	for _, c := range cases {
-		database = c.database
-		auth = c.auth
-		config = c.config
-
-		req, err := http.NewRequest("POST", "/insert", strings.NewReader(c.request))
-		if err != nil {
-			t.Fatalf("Request error: %s", err)
-		}
-		req.RemoteAddr = "fakeIP"
-
-		var recorder = httptest.NewRecorder()
-
-		insert(recorder, req)
-
-		if c.expected == nil {
-			if recorder.Code != c.status {
-				t.Errorf("Status code didn't match! Expected %d, but received %d", c.status, recorder.Code)
-			}
-			continue
-		}
-
-		var received InsertResponse
-		err = json.Unmarshal(recorder.Body.Bytes(), &received)
-
-		if err != nil {
-			t.Errorf("Response JSON invalid: %s", err)
-		} else if recorder.Code != c.status {
-			t.Errorf("Status code didn't match! Expected %d, but received %d", c.status, recorder.Code)
-		} else if received.Success != c.expected.Success {
-			t.Errorf("Success value didn't match! Expected %b, but received %b", c.expected.Success, received.Success)
-		} else if received.Status != c.expected.Status {
-			t.Errorf("Status message didn't match! Expected %s, but received %s", c.expected.Status, received.Status)
-		}
+		runTest(c, t)
 	}
-}
-
-type deleteTest struct {
-	request  string
-	status   int
-	expected *InsertResponse
-	database data.MISDatabase
-	auth     mauth.System
-	config   *data.Configuration
 }
 
 func TestDelete(t *testing.T) {
 	log.InitWithWriter(nil)
-	{
-		config = &data.Configuration{}
-		req, err := http.NewRequest("GET", "/delete", nil)
-		if err != nil {
-			t.Fatalf("Request error: %s", err)
-		}
-		req.RemoteAddr = "fakeIP"
-		var recorder = httptest.NewRecorder()
-		delete(recorder, req)
-		if recorder.Code != http.StatusMethodNotAllowed {
-			t.Errorf("Status code didn't match! Expected %d, but received %d", http.StatusMethodNotAllowed, recorder.Code)
-		}
-	}
-
-	cases := []deleteTest{
-	// TODO: Delete tests
+	cases := []test{
+		{
+			action: "GET", path: "/delete",
+			request:  "",
+			status:   http.StatusMethodNotAllowed,
+			expected: nil,
+			config:   &data.Configuration{},
+			auth:     fakeAuth{},
+			database: fakeDatabase{},
+		},
+		{
+			action: "POST", path: "/delete",
+			request:  "{\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
+			status:   http.StatusBadRequest,
+			expected: nil,
+			config:   &data.Configuration{ImageLocation: "/tmp"},
+			auth:     fakeAuth{},
+			database: fakeDatabase{},
+		},
+		{
+			action: "POST", path: "/delete",
+			request:  "{\"image-name\":\"fakeImage\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
+			status:   http.StatusUnauthorized,
+			expected: &InsertResponse{Success: false, Status: "invalid-authtoken"},
+			config:   &data.Configuration{ImageLocation: "/tmp"},
+			auth:     fakeAuth{authTokenError: errors.New("fakeError")},
+			database: fakeDatabase{},
+		},
+		{
+			action: "POST", path: "/delete",
+			request:  "{\"image-name\":\"fakeImage\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
+			status:   http.StatusForbidden,
+			expected: &InsertResponse{Success: false, Status: "no-permissions"},
+			config:   &data.Configuration{ImageLocation: "/tmp"},
+			auth:     fakeAuth{},
+			database: fakeDatabase{imageOwner: "fakeUser2"},
+		},
+		{
+			action: "POST", path: "/delete",
+			request:  "{\"image-name\":\"fakeImage\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
+			status:   http.StatusNotFound,
+			expected: &InsertResponse{Success: false, Status: "not-found"},
+			config:   &data.Configuration{ImageLocation: "/tmp"},
+			auth:     fakeAuth{},
+			database: fakeDatabase{},
+		},
+		{
+			action: "POST", path: "/delete",
+			request:  "{\"image-name\":\"fakeImage\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
+			status:   http.StatusInternalServerError,
+			expected: nil,
+			config:   &data.Configuration{ImageLocation: "/tmp"},
+			auth:     fakeAuth{},
+			database: fakeDatabase{imageOwner: "fakeUser", removeError: errors.New("fakeError")},
+		},
+		/*{ TODO: Create a test case that makes os.Remove throw an error other than no such file or directory.
+			request:  "{\"image-name\":\"fake/Image\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
+			status:   http.StatusInternalServerError,
+			expected: nil,
+			config:   &data.Configuration{ImageLocation: "/tmp"},
+			auth:     fakeAuth{},
+			database: fakeDatabase{imageOwner: "fakeUser"},
+		},*/
+		{
+			action: "POST", path: "/delete",
+			request:  "{\"image-name\":\"fakeImage\",\"username\": \"fakeUser\",\"auth-token\": \"fakeAuthToken\"}",
+			status:   http.StatusAccepted,
+			expected: &InsertResponse{Success: true, Status: "deleted"},
+			config:   &data.Configuration{ImageLocation: "/"},
+			auth:     fakeAuth{},
+			database: fakeDatabase{imageOwner: "fakeUser"},
+		},
 	}
 
 	for _, c := range cases {
-		database = c.database
-		auth = c.auth
-		config = c.config
+		runTest(c, t)
+	}
+}
 
-		req, err := http.NewRequest("POST", "/delete", strings.NewReader(c.request))
-		if err != nil {
-			t.Fatalf("Request error: %s", err)
-		}
-		req.RemoteAddr = "fakeIP"
+func runTest(c test, t *testing.T) {
+	database = c.database
+	auth = c.auth
+	config = c.config
 
-		var recorder = httptest.NewRecorder()
+	req, err := http.NewRequest(c.action, c.path, strings.NewReader(c.request))
+	if err != nil {
+		t.Fatalf("Request error: %s", err)
+	}
+	req.RemoteAddr = "fakeIP"
 
+	var recorder = httptest.NewRecorder()
+
+	if c.path == "/insert" {
+		insert(recorder, req)
+	} else if c.path == "/delete" {
 		delete(recorder, req)
+	}
 
-		if c.expected == nil {
-			if recorder.Code != c.status {
-				t.Errorf("Status code didn't match! Expected %d, but received %d", c.status, recorder.Code)
-			}
-			continue
-		}
-
-		var received InsertResponse
-		err = json.Unmarshal(recorder.Body.Bytes(), &received)
-
-		if err != nil {
-			t.Errorf("Response JSON invalid: %s", err)
-		} else if recorder.Code != c.status {
+	if c.expected == nil {
+		if recorder.Code != c.status {
 			t.Errorf("Status code didn't match! Expected %d, but received %d", c.status, recorder.Code)
-		} else if received.Success != c.expected.Success {
-			t.Errorf("Success value didn't match! Expected %b, but received %b", c.expected.Success, received.Success)
-		} else if received.Status != c.expected.Status {
-			t.Errorf("Status message didn't match! Expected %s, but received %s", c.expected.Status, received.Status)
 		}
+		return
+	}
+
+	var received InsertResponse
+	err = json.Unmarshal(recorder.Body.Bytes(), &received)
+
+	if err != nil {
+		t.Errorf("Response JSON invalid: %s", err)
+	} else if recorder.Code != c.status {
+		t.Errorf("Status code didn't match! Expected %d, but received %d", c.status, recorder.Code)
+	} else if received.Success != c.expected.Success {
+		t.Errorf("Success value didn't match! Expected %b, but received %b", c.expected.Success, received.Success)
+	} else if received.Status != c.expected.Status {
+		t.Errorf("Status message didn't match! Expected %s, but received %s", c.expected.Status, received.Status)
 	}
 }
 
