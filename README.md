@@ -46,7 +46,7 @@ Insert, Delete and Hide requests will respond with the same JSON template, which
  * `status-simple` - A simple and short error keyword.
  * `status-humanreadable` - A longer, human-readable error message.
 
-A search query will return an array of search results, which will contain the following fields:
+A search query will respond with the same JSON template as the other requests, but in addition to that there will be an array of search results, which will contain the following fields:
  * `image-name` - The name of the image. Does not contain the extension (see `image-format`)
  * `image-format` - The file name extension of the image.
  * `mime-type` - The MIME type of the image.

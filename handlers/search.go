@@ -20,6 +20,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"maunium.net/go/mauimageserver/data"
 	log "maunium.net/go/maulogger"
 	"net/http"
 	"time"
@@ -33,6 +34,14 @@ type SearchForm struct {
 	MinTime   int64  `json:"uploaded-after"`
 	MaxTime   int64  `json:"uploaded-before"`
 	AuthToken string `json:"auth-token"`
+}
+
+// SearchResponse is the struct wrapping results for a search query.
+type SearchResponse struct {
+	Success        bool              `json:"success"`
+	Status         string            `json:"status-simple"`
+	StatusReadable string            `json:"status-humanreadable"`
+	Results        []data.ImageEntry `json:"results,omitempty"`
 }
 
 // String turns a SearchForm into a string
@@ -76,7 +85,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 		err = auth.CheckAuthToken(sf.Adder, []byte(sf.AuthToken))
 		if err != nil {
 			log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, sf.Adder)
-			output(w, GenericResponse{
+			output(w, SearchResponse{
 				Success:        false,
 				Status:         "invalid-authtoken",
 				StatusReadable: "The authentication token was incorrect. Please try logging in again.",
@@ -94,5 +103,10 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Debugf("%[1]s executed a search: %s", ip, sf.String())
-	output(w, results, http.StatusOK)
+	output(w, SearchResponse{
+		Success:        true,
+		Status:         "success",
+		StatusReadable: fmt.Sprintf("Search completed with %d results", len(results)),
+		Results:        results,
+	}, http.StatusOK)
 }

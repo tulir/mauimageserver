@@ -71,20 +71,28 @@ func TestSearch(t *testing.T) {
 		auth:     fakeAuth{},
 		database: fakeDatabase{searchImages: []data.ImageEntry{{ImageName: "asd"}, {ImageName: "dsa"}}},
 		assert: func(index int, c test, t *testing.T, recorder *httptest.ResponseRecorder) {
-			var expected = []data.ImageEntry{{ImageName: "asd"}, {ImageName: "dsa"}}
+			var expected = SearchResponse{
+				Success: true,
+				Status:  "success",
+				Results: []data.ImageEntry{{ImageName: "asd"}, {ImageName: "dsa"}},
+			}
 
-			var received []data.ImageEntry
+			var received SearchResponse
 			err := json.Unmarshal(recorder.Body.Bytes(), &received)
 			if err != nil {
 				t.Errorf("[%s #%d] Response JSON invalid: %s", c.path, index, err)
 			} else if recorder.Code != c.status {
 				t.Errorf("[%s #%d] Status code didn't match! Expected %d, but received %d", c.path, index, c.status, recorder.Code)
-			} else if len(received) != len(expected) {
-				t.Errorf("[%s #%d] Number of results didn't match! Expected %d, but received %d", c.path, index, len(expected), len(received))
+			} else if received.Success != expected.Success {
+				t.Errorf("[%s #%d] Success didn't match! Expected %t, but received %t", c.path, index, expected.Success, received.Success)
+			} else if received.Status != expected.Status {
+				t.Errorf("[%s #%d] Status didn't match! Expected %s, but received %s", c.path, index, expected.Status, received.Status)
+			} else if len(received.Results) != len(expected.Results) {
+				t.Errorf("[%s #%d] Number of results didn't match! Expected %d, but received %d", c.path, index, len(expected.Results), len(received.Results))
 			} else {
-				for i := 0; i < len(received); i++ {
-					if received[i].ImageName != expected[i].ImageName {
-						t.Errorf("[%s #%d] Image name of result #%d didn't match! Expected %s, but received %s", c.path, index, i, expected[i].ImageName, received[i].ImageName)
+				for i := 0; i < len(received.Results); i++ {
+					if received.Results[i].ImageName != expected.Results[i].ImageName {
+						t.Errorf("[%s #%d] Image name of result #%d didn't match! Expected %s, but received %s", c.path, index, i, expected.Results[i].ImageName, received.Results[i].ImageName)
 					}
 				}
 			}
