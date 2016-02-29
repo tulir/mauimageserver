@@ -54,7 +54,7 @@ func loadDatabase() {
 
 func loadTemplates() {
 	log.Infof("Loading HTML templates...")
-	err := data.LoadTemplates()
+	err := data.LoadTemplates(config.ImageTemplate)
 	if err != nil {
 		log.Fatalf("Failed to load image page: %s", err)
 		os.Exit(3)
