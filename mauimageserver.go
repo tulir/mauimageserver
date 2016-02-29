@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 )
@@ -34,6 +35,7 @@ const version = "2.0.1"
 
 var debug = flag.BoolP("debug", "d", false, "Enable to print debug messages to stdout")
 var confPath = flag.StringP("config", "c", "/etc/mis2/config.json", "The path of the mauImageServer configuration file.")
+var logPath = flag.StringP("config", "c", "/var/log/mis2", "The path of the mauImageServer configuration file.")
 var disableSafeShutdown = flag.Bool("no-safe-shutdown", false, "Disable Interrupt/SIGTERM catching and handling.")
 
 var config *data.Configuration
@@ -59,7 +61,10 @@ func main() {
 	if *debug {
 		log.PrintLevel = 0
 	}
-	log.Fileformat = func(date string, i int) string { return fmt.Sprintf("logs/%[1]s-%02[2]d.log", date, i) }
+	os.MkdirAll(*logPath, 0755)
+	log.Fileformat = func(date string, i int) string {
+		return filepath.Join(*logPath, fmt.Sprintf("%[1]s-%02[2]d.log", date, i))
+	}
 	// Initialize the logger
 	log.Init()
 
