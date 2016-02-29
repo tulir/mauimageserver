@@ -31,7 +31,7 @@ import (
 	"syscall"
 )
 
-const version = "2.0.2"
+const version = "2.1.0"
 
 var debug = flag.BoolP("debug", "d", false, "Enable to print debug messages to stdout")
 var confPath = flag.StringP("config", "c", "/etc/mis2/config.json", "The path of the mauImageServer configuration file.")
