@@ -32,7 +32,12 @@ A hide request is similar to a delete request. It too requires authentication an
 In addition to the fields of a delete request, a hide request must also have the field `hidden` which must be a boolean value of whether or not the image should be hidden.
 
 ### Search
-TODO: Documentation
+A search query may contain the following fields:
+ * `image-format` - The format of the image.
+ * `uploader` - The username of the person who uploaded the image. Doesn't have to be exactly correct, a part of the username should work.
+ * `client-name` - The client used to upload the image. As with the uploader, doesn't have to be exact.
+ * `uploaded-after` - Only include images uploaded after this unix timestamp.
+ * `uploaded-before` - Only include images uploaded before this unix timestamp.
 
 ## Responses
 Insert, Delete and Hide requests will respond with the same JSON template, which contains the following fields:
@@ -41,4 +46,11 @@ Insert, Delete and Hide requests will respond with the same JSON template, which
  * `status-humanreadable` - A longer, human-readable error message.
 
 A search query will return an array of search results, which will contain the following fields:
-TODO: Search query fields
+ * `image-name` - The name of the image. Does not contain the extension (see `image-format`)
+ * `image-format` - The file name extension of the image.
+ * `mime-type` - The MIME type of the image.
+ * `adder` - The name of the user who uploaded the image.
+ * `client-name` - The name of the client used to upload the image.
+ * `timestamp` - The unix timestamp of the time the image was uploaded.
+ * `id` - The index of the image. Indexes start from 0 and increment by one for each image uploaded.
+ * `hidden` - Whether or not the image is hidden from search. This will obviously always be false, but it's still included in case I make things like searching for own images with authentication.
