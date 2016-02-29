@@ -27,6 +27,7 @@ import (
 // Configuration is a container struct for the configuration.
 type Configuration struct {
 	ImageLocation string    `json:"image-location"`
+	ImageTemplate string    `json:"image-template"`
 	DateFormat    string    `json:"date-format"`
 	TrustHeaders  bool      `json:"trust-headers"`
 	AllowSearch   bool      `json:"allow-search"`

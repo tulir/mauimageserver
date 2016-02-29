@@ -71,7 +71,7 @@ func main() {
 	log.Infof("Initializing mauImageServer " + version)
 	loadConfig()
 	loadDatabase()
-	loadTemplates()
+	loadTemplates(config.ImageTemplate)
 
 	handlers.Init(config, database, auth)
 

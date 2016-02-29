@@ -40,13 +40,9 @@ func (ip ImagePage) Send(w http.ResponseWriter) {
 }
 
 // LoadTemplates loads all required templates.
-func LoadTemplates() error {
+func LoadTemplates(path string) error {
 	var err error
-	/*index, err = template.ParseFiles("index.html")
-		if err != nil {
-	        return err
-		}*/
-	image, err = template.ParseFiles("image.html")
+	image, err = template.ParseFiles(path)
 	if err != nil {
 		return err
 	}
