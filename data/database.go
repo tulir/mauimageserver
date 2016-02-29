@@ -42,7 +42,6 @@ type MISDatabase interface {
 	Load() error
 	// Unload the underlying database.
 	Unload() error
-	// GetInternalDB returns the underlying sql.DB pointer.
 	GetInternalDB() *sql.DB
 
 	// Insert the given image name and marks it owned by the given username.
@@ -70,14 +69,14 @@ type mis struct {
 
 // CreateDatabase creates an instance of MISDatabase
 func CreateDatabase(config SQLConfig) MISDatabase {
-	return mis{conf: config}
+	return &mis{conf: config}
 }
 
-func (data mis) GetInternalDB() *sql.DB {
+func (data *mis) GetInternalDB() *sql.DB {
 	return data.db
 }
 
-func (data mis) Load() error {
+func (data *mis) Load() error {
 	var err error
 	data.db, err = sql.Open("mysql", fmt.Sprintf("%[1]s@%[2]s/%[3]s", data.conf.Authentication.ToString(), data.conf.Connection.ToString(), data.conf.Database))
 
@@ -104,11 +103,11 @@ func (data mis) Load() error {
 	return nil
 }
 
-func (data mis) Unload() error {
+func (data *mis) Unload() error {
 	return data.db.Close()
 }
 
-func (data mis) GetOwner(imageName string) string {
+func (data *mis) GetOwner(imageName string) string {
 	result, err := data.db.Query("SELECT adder FROM images WHERE imgname=?", imageName)
 	if err != nil {
 		return ""
@@ -127,7 +126,7 @@ func (data mis) GetOwner(imageName string) string {
 	return ""
 }
 
-func (data mis) Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry, error) {
+func (data *mis) Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry, error) {
 	var result *sql.Rows
 	var err error
 	if len(format) == 0 {
@@ -220,12 +219,12 @@ func (data mis) Search(format, adder, client string, timeMin, timeMax int64) ([]
 	return results, nil
 }
 
-func (data mis) Remove(imageName string) error {
+func (data *mis) Remove(imageName string) error {
 	_, err := data.db.Exec("DELETE FROM images WHERE imgname=?", imageName)
 	return err
 }
 
-func (data mis) SetHidden(imageName string, hidden bool) error {
+func (data *mis) SetHidden(imageName string, hidden bool) error {
 	var hid int
 	if hidden {
 		hid = 1
@@ -236,7 +235,7 @@ func (data mis) SetHidden(imageName string, hidden bool) error {
 	return err
 }
 
-func (data mis) Insert(imageName, imageFormat, mimeType, adder, adderip, client string, hidden bool) error {
+func (data *mis) Insert(imageName, imageFormat, mimeType, adder, adderip, client string, hidden bool) error {
 	var hid int
 	if hidden {
 		hid = 1
@@ -247,7 +246,7 @@ func (data mis) Insert(imageName, imageFormat, mimeType, adder, adderip, client 
 	return err
 }
 
-func (data mis) Update(imageName, imageFormat, mimeType, adderip, client string, hidden bool) error {
+func (data *mis) Update(imageName, imageFormat, mimeType, adderip, client string, hidden bool) error {
 	var hid int
 	if hidden {
 		hid = 1
@@ -258,7 +257,7 @@ func (data mis) Update(imageName, imageFormat, mimeType, adderip, client string,
 	return err
 }
 
-func (data mis) Query(imageName string) (ImageEntry, error) {
+func (data *mis) Query(imageName string) (ImageEntry, error) {
 	result, err := data.db.Query("SELECT format, mimetype, adder, adderip, client, timestamp, id, hidden FROM images WHERE imgname=?", imageName)
 	if err != nil {
 		return ImageEntry{}, err
