@@ -38,6 +38,7 @@ A search query may contain the following fields:
  * `client-name` - The client used to upload the image. As with the uploader, doesn't have to be exact.
  * `uploaded-after` - Only include images uploaded after this unix timestamp.
  * `uploaded-before` - Only include images uploaded before this unix timestamp.
+ * `auth-token` - Authentication token. Must be used with exact username in the `uploader` field. When used, hidden images will be returned.
 
 ## Responses
 Insert, Delete and Hide requests will respond with the same JSON template, which contains the following fields:
@@ -53,4 +54,4 @@ A search query will return an array of search results, which will contain the fo
  * `client-name` - The name of the client used to upload the image.
  * `timestamp` - The unix timestamp of the time the image was uploaded.
  * `id` - The index of the image. Indexes start from 0 and increment by one for each image uploaded.
- * `hidden` - Whether or not the image is hidden from search. This will obviously always be false, but it's still included in case I make things like searching for own images with authentication.
+ * `hidden` - Whether or not the image is hidden from non-authenticated search.

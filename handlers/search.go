@@ -27,11 +27,12 @@ import (
 
 // SearchForm is the form for searching for images.
 type SearchForm struct {
-	Format  string `json:"image-format"`
-	Adder   string `json:"adder"`
-	Client  string `json:"client-name"`
-	MinTime int64  `json:"uploaded-after"`
-	MaxTime int64  `json:"uploaded-before"`
+	Format    string `json:"image-format"`
+	Adder     string `json:"adder"`
+	Client    string `json:"client-name"`
+	MinTime   int64  `json:"uploaded-after"`
+	MaxTime   int64  `json:"uploaded-before"`
+	AuthToken string `json:"auth-token"`
 }
 
 // String turns a SearchForm into a string
@@ -70,7 +71,22 @@ func Search(w http.ResponseWriter, r *http.Request) {
 		sf.MaxTime = time.Now().Unix()
 	}
 
-	results, err := database.Search(sf.Format, sf.Adder, sf.Client, sf.MinTime, sf.MaxTime)
+	var authenticated = false
+	if len(sf.AuthToken) != 0 {
+		err = auth.CheckAuthToken(sf.Adder, []byte(sf.AuthToken))
+		if err != nil {
+			log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, sf.Adder)
+			output(w, GenericResponse{
+				Success:        false,
+				Status:         "invalid-authtoken",
+				StatusReadable: "The authentication token was incorrect. Please try logging in again.",
+			}, http.StatusUnauthorized)
+			return
+		}
+		authenticated = true
+	}
+
+	results, err := database.Search(sf.Format, sf.Adder, sf.Client, sf.MinTime, sf.MaxTime, authenticated)
 	if err != nil {
 		log.Errorf("Failed to execute search %[2]s by %[1]s: %[3]s", ip, sf.String(), err)
 		w.WriteHeader(http.StatusInternalServerError)

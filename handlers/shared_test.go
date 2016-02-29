@@ -151,6 +151,6 @@ func (fake fakeDatabase) Query(imageName string) (data.ImageEntry, error) {
 func (fake fakeDatabase) GetOwner(imageName string) string {
 	return fake.imageOwner
 }
-func (fake fakeDatabase) Search(format, adder, client string, timeMin, timeMax int64) ([]data.ImageEntry, error) {
+func (fake fakeDatabase) Search(format, adder, client string, timeMin, timeMax int64, showHidden bool) ([]data.ImageEntry, error) {
 	return fake.searchImages, fake.searchError
 }

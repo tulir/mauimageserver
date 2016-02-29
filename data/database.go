@@ -59,7 +59,7 @@ type MISDatabase interface {
 	// GetOwner gets the owner of the image with the given name.
 	GetOwner(imageName string) string
 	// Search the database with the given arguments.
-	Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry, error)
+	Search(format, adder, client string, timeMin, timeMax int64, showHidden bool) ([]ImageEntry, error)
 }
 
 type mis struct {
@@ -126,7 +126,7 @@ func (data *mis) GetOwner(imageName string) string {
 	return ""
 }
 
-func (data *mis) Search(format, adder, client string, timeMin, timeMax int64) ([]ImageEntry, error) {
+func (data *mis) Search(format, adder, client string, timeMin, timeMax int64, showHidden bool) ([]ImageEntry, error) {
 	var result *sql.Rows
 	var err error
 	if len(format) == 0 {
@@ -207,14 +207,19 @@ func (data *mis) Search(format, adder, client string, timeMin, timeMax int64) ([
 		}
 		var imageName, format, mimeType, adder, adderip, client string
 		var timestamp int64
-		var id, hidden int
+		var id, hid int
 
-		err = result.Scan(&imageName, &format, &mimeType, &adder, &adderip, &client, &timestamp, &hidden, &id)
-		if err != nil || hidden != 0 {
+		err = result.Scan(&imageName, &format, &mimeType, &adder, &adderip, &client, &timestamp, &hid, &id)
+		if err != nil || (!showHidden && hid != 0) {
 			continue
 		}
 
-		results = append(results, ImageEntry{ImageName: imageName, Format: format, MimeType: mimeType, Adder: adder, Client: client, Timestamp: timestamp, ID: id, Hidden: false})
+		var hidden = false
+		if hid != 0 {
+			hidden = true
+		}
+
+		results = append(results, ImageEntry{ImageName: imageName, Format: format, MimeType: mimeType, Adder: adder, Client: client, Timestamp: timestamp, ID: id, Hidden: hidden})
 	}
 	return results, nil
 }
