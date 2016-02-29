@@ -27,16 +27,16 @@ import (
 
 // SearchForm is the form for searching for images.
 type SearchForm struct {
-	Format   string `json:"image-format"`
-	Uploader string `json:"uploader"`
-	Client   string `json:"client-name"`
-	MinTime  int64  `json:"uploaded-after"`
-	MaxTime  int64  `json:"uploaded-before"`
+	Format  string `json:"image-format"`
+	Adder   string `json:"adder"`
+	Client  string `json:"client-name"`
+	MinTime int64  `json:"uploaded-after"`
+	MaxTime int64  `json:"uploaded-before"`
 }
 
 // String turns a SearchForm into a string
 func (sf SearchForm) String() string {
-	return fmt.Sprintf("<%[1]s|%[2]s|%[3]s|%[4]d|%[5]d>", sf.Format, sf.Uploader, sf.Client, sf.MinTime, sf.MaxTime)
+	return fmt.Sprintf("<%[1]s|%[2]s|%[3]s|%[4]d|%[5]d>", sf.Format, sf.Adder, sf.Client, sf.MinTime, sf.MaxTime)
 }
 
 // Search handles search requests
@@ -58,7 +58,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	// Decode the payload.
 	err := decoder.Decode(&sf)
 	// Check if there was an error decoding.
-	if err != nil || (len(sf.Format) == 0 && len(sf.Uploader) == 0 && len(sf.Client) == 0 && sf.MinTime <= 0 && sf.MaxTime <= 0) {
+	if err != nil || (len(sf.Format) == 0 && len(sf.Adder) == 0 && len(sf.Client) == 0 && sf.MinTime <= 0 && sf.MaxTime <= 0) {
 		log.Debugf("%[1]s sent an invalid search request.", ip)
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -70,7 +70,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 		sf.MaxTime = time.Now().Unix()
 	}
 
-	results, err := database.Search(sf.Format, sf.Uploader, sf.Client, sf.MinTime, sf.MaxTime)
+	results, err := database.Search(sf.Format, sf.Adder, sf.Client, sf.MinTime, sf.MaxTime)
 	if err != nil {
 		log.Errorf("Failed to execute search %[2]s by %[1]s: %[3]s", ip, sf.String(), err)
 		w.WriteHeader(http.StatusInternalServerError)
