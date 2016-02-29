@@ -35,7 +35,7 @@ const version = "2.0.1"
 
 var debug = flag.BoolP("debug", "d", false, "Enable to print debug messages to stdout")
 var confPath = flag.StringP("config", "c", "/etc/mis2/config.json", "The path of the mauImageServer configuration file.")
-var logPath = flag.StringP("config", "c", "/var/log/mis2", "The path of the mauImageServer configuration file.")
+var logPath = flag.StringP("logs", "l", "/var/log/mis2", "The path of the mauImageServer configuration file.")
 var disableSafeShutdown = flag.Bool("no-safe-shutdown", false, "Disable Interrupt/SIGTERM catching and handling.")
 
 var config *data.Configuration
