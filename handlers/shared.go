@@ -27,6 +27,13 @@ import (
 	"time"
 )
 
+// GenericResponse is the response for insert/delete/hide requests.
+type GenericResponse struct {
+	Success        bool   `json:"success"`
+	Status         string `json:"status-simple"`
+	StatusReadable string `json:"status-humanreadable"`
+}
+
 var auth mauth.System
 var database data.MISDatabase
 var config *data.Configuration

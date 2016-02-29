@@ -33,7 +33,7 @@ type test struct {
 	path     string
 	request  string
 	status   int
-	expected *InsertResponse
+	expected *GenericResponse
 	database data.MISDatabase
 	auth     mauth.System
 	config   *data.Configuration
@@ -72,7 +72,7 @@ func defaultAssert(index int, c test, t *testing.T, recorder *httptest.ResponseR
 		return
 	}
 
-	var received InsertResponse
+	var received GenericResponse
 	err := json.Unmarshal(recorder.Body.Bytes(), &received)
 
 	if err != nil {

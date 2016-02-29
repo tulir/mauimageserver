@@ -57,7 +57,7 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	// Check if the auth token was correct
 	if err != nil {
 		log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, dfr.Username)
-		output(w, InsertResponse{
+		output(w, GenericResponse{
 			Success:        false,
 			Status:         "invalid-authtoken",
 			StatusReadable: "The authentication token was incorrect. Please try logging in again.",
@@ -68,12 +68,12 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	data, err := database.Query(dfr.ImageName)
 	if err != nil {
 		log.Debugf("%[1]s@%[2]s attempted to delete an image that doesn't exist.", dfr.Username, ip, data.Adder)
-		output(w, InsertResponse{Success: false, Status: "not-found", StatusReadable: "The image you requested to be deleted does not exist."}, http.StatusNotFound)
+		output(w, GenericResponse{Success: false, Status: "not-found", StatusReadable: "The image you requested to be deleted does not exist."}, http.StatusNotFound)
 		return
 	}
 	if data.Adder != dfr.Username {
 		log.Debugf("%[1]s@%[2]s attempted to delete an image uploaded by %[3]s.", dfr.Username, ip, data.Adder)
-		output(w, InsertResponse{Success: false, Status: "no-permissions",
+		output(w, GenericResponse{Success: false, Status: "no-permissions",
 			StatusReadable: "The image you requested to be deleted was not uploaded by you."}, http.StatusForbidden)
 		return
 	}
@@ -96,7 +96,7 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	log.Debugf("%[1]s@%[2]s successfully deleted the image with the name %[3]s.", dfr.Username, ip, dfr.ImageName)
-	output(w, InsertResponse{
+	output(w, GenericResponse{
 		Success:        true,
 		Status:         "deleted",
 		StatusReadable: "The image " + dfr.ImageName + " was successfully deleted.",

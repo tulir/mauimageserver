@@ -37,13 +37,6 @@ type InsertForm struct {
 	Hidden      bool   `json:"hidden"`
 }
 
-// InsertResponse is the response for an insert call.
-type InsertResponse struct {
-	Success        bool   `json:"success"`
-	Status         string `json:"status-simple"`
-	StatusReadable string `json:"status-humanreadable"`
-}
-
 // Insert handles insert requests
 func Insert(w http.ResponseWriter, r *http.Request) {
 	var ip = getIP(r)
@@ -80,7 +73,7 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 		if config.RequireAuth {
 			// The user is not logged in, but the config is set to require authentication, send error.
 			log.Debugf("%[1]s tried to upload an image without authentication, even though authentication is required.", ip)
-			output(w, InsertResponse{
+			output(w, GenericResponse{
 				Success:        false,
 				Status:         "not-logged-in",
 				StatusReadable: "This MIS server requires authentication. Please log in or register.",
@@ -94,7 +87,7 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 		err = auth.CheckAuthToken(ifr.Username, []byte(ifr.AuthToken))
 		if err != nil {
 			log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, ifr.Username)
-			output(w, InsertResponse{
+			output(w, GenericResponse{
 				Success:        false,
 				Status:         "invalid-authtoken",
 				StatusReadable: "Your authentication token was incorrect. Please try logging in again.",
@@ -108,7 +101,7 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 	owner := database.GetOwner(ifr.ImageName)
 	if len(owner) > 0 {
 		if owner != ifr.Username || ifr.Username == "anonymous" {
-			output(w, InsertResponse{
+			output(w, GenericResponse{
 				Success:        false,
 				Status:         "already-exists",
 				StatusReadable: "The requested image name is already in use by another user",
@@ -122,7 +115,7 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 	// Decode the base64 image from the JSON request.
 	image, err := base64.StdEncoding.DecodeString(ifr.Image)
 	if err != nil {
-		output(w, InsertResponse{Success: false, Status: "invalid-image-encoding",
+		output(w, GenericResponse{Success: false, Status: "invalid-image-encoding",
 			StatusReadable: "The given image is not properly encoded in base64."}, http.StatusUnsupportedMediaType)
 		log.Errorf("Error while decoding image from %[1]s@%[2]s: %[3]s", ifr.Username, ip, err)
 		return
@@ -132,7 +125,7 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 
 	if !strings.HasPrefix(mimeType, "image/") {
 		log.Debugf("%[1]s@%[2]s attempted to upload an image with an incorrect MIME type.", ifr.Username, ip, owner)
-		output(w, InsertResponse{
+		output(w, GenericResponse{
 			Success:        false,
 			Status:         "invalid-mime",
 			StatusReadable: "The uploaded data is of an incorrect MIME type.",
@@ -154,7 +147,7 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 		err = database.Insert(ifr.ImageName, ifr.ImageFormat, mimeType, ifr.Username, ip, ifr.Client, ifr.Hidden)
 		if err != nil {
 			log.Errorf("Error while inserting image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
-			output(w, InsertResponse{
+			output(w, GenericResponse{
 				Success:        false,
 				Status:         "database-error",
 				StatusReadable: "An internal server error occurred while attempting to save image information to the database.",
@@ -163,7 +156,7 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (new).", ifr.Username, ip, ifr.ImageName)
-		output(w, InsertResponse{
+		output(w, GenericResponse{
 			Success:        true,
 			Status:         "created",
 			StatusReadable: "The image was successfully saved with the name " + ifr.ImageName,
@@ -173,7 +166,7 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 		err = database.Update(ifr.ImageName, ifr.ImageFormat, mimeType, ip, ifr.Client, ifr.Hidden)
 		if err != nil {
 			log.Errorf("Error while updating data of image from %[1]s@%[2]s into the database: %[3]s", ifr.Username, ip, err)
-			output(w, InsertResponse{
+			output(w, GenericResponse{
 				Success:        false,
 				Status:         "database-error",
 				StatusReadable: "An internal server error occurred while attempting to save image information to the database.",
@@ -181,7 +174,7 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Debugf("%[1]s@%[2]s successfully uploaded an image with the name %[3]s (replaced).", ifr.Username, ip, ifr.ImageName)
-		output(w, InsertResponse{
+		output(w, GenericResponse{
 			Success: true,
 			Status:  "replaced",
 			StatusReadable: "The image was successfully saved with the name " + ifr.ImageName +

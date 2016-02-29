@@ -56,7 +56,7 @@ func Hide(w http.ResponseWriter, r *http.Request) {
 	// Check if the auth token was correct
 	if err != nil {
 		log.Debugf("%[1]s tried to authenticate as %[2]s with the wrong token.", ip, hfr.Username)
-		output(w, InsertResponse{
+		output(w, GenericResponse{
 			Success:        false,
 			Status:         "invalid-authtoken",
 			StatusReadable: "The authentication token was incorrect. Please try logging in again.",
@@ -68,7 +68,7 @@ func Hide(w http.ResponseWriter, r *http.Request) {
 	if len(owner) > 0 {
 		if owner != hfr.Username {
 			log.Debugf("%[1]s@%[2]s attempted to hide an image uploaded by %[3]s.", hfr.Username, ip, owner)
-			output(w, InsertResponse{
+			output(w, GenericResponse{
 				Success:        false,
 				Status:         "no-permissions",
 				StatusReadable: "The image you requested to be deleted was not uploaded by you.",
@@ -77,7 +77,7 @@ func Hide(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		log.Debugf("%[1]s@%[2]s attempted to hide an image that doesn't exist.", hfr.Username, ip, owner)
-		output(w, InsertResponse{Success: false, Status: "not-found", StatusReadable: "The image you requested to be deleted does not exist."}, http.StatusNotFound)
+		output(w, GenericResponse{Success: false, Status: "not-found", StatusReadable: "The image you requested to be deleted does not exist."}, http.StatusNotFound)
 		return
 	}
 
@@ -96,7 +96,7 @@ func Hide(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Debugf("%[1]s@%[2]s successfully changed hidden status to %[4]t of the image with the name %[3]s.", hfr.Username, ip, hfr.ImageName, hfr.Hidden)
-	output(w, InsertResponse{
+	output(w, GenericResponse{
 		Success:        true,
 		Status:         hid,
 		StatusReadable: "The image " + hfr.ImageName + " was successfully " + hid + ".",
