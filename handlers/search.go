@@ -102,7 +102,11 @@ func Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Debugf("%[1]s executed a search: %s", ip, sf.String())
+	if authenticated {
+		log.Debugf("%[3]s@%[1]s executed a search: %[2]s", ip, sf.String(), sf.Adder)
+	} else {
+		log.Debugf("%[1]s executed a search: %[2]s", ip, sf.String())
+	}
 	output(w, SearchResponse{
 		Success:        true,
 		Status:         "success",
