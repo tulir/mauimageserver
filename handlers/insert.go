@@ -160,6 +160,7 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 			Success:        true,
 			Status:         "created",
 			StatusReadable: "The image was successfully saved with the name " + ifr.ImageName,
+			ImageName:      ifr.ImageName,
 		}, http.StatusCreated)
 	} else {
 		// The image name was in use. Update the data in the database.
@@ -179,6 +180,7 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 			Status:  "replaced",
 			StatusReadable: "The image was successfully saved with the name " + ifr.ImageName +
 				", replacing your previous image with the same name",
+			ImageName: ifr.ImageName,
 		}, http.StatusAccepted)
 	}
 }

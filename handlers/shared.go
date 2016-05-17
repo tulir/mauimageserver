@@ -32,6 +32,7 @@ type GenericResponse struct {
 	Success        bool   `json:"success"`
 	Status         string `json:"status-simple"`
 	StatusReadable string `json:"status-humanreadable"`
+	ImageName      string `json:"image-name,omitempty"`
 }
 
 var auth mauth.System
