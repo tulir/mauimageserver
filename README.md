@@ -1,11 +1,13 @@
-# Introduction
-mauImageServer is a simple image hosting and sharing backend designed to be used with [mauCapture](https://git.maunium.net/Tulir293/maucapture2).
-[mAuth](https://git.maunium.net/Tulir293/mauth) is used for authentication.
+# mauImageServer
+[![License](http://img.shields.io/:license-gpl3-blue.svg?style=flat-square)](http://www.gnu.org/licenses/gpl-3.0.html)
+
+mauImageServer is a simple image hosting and sharing backend designed to be used with [mauCapture](https://github.com/tulir293/maucapture2).
+[mAuth](https://github.com/tulir293/mauth) is used for authentication.
 It also has a basic search function. An example search frontend can be found from [img.mau.lu/search.html](https://img.mau.lu/search.html).
 
 # API
 ## Authentication
-The login interface is located at `/auth/login` and register at `/auth/register`. See the documentation of [mAuth](https://git.maunium.net/Tulir293/mauth) for details about the request payload.
+The login interface is located at `/auth/login` and register at `/auth/register`. See the documentation of [mAuth](https://github.com/tulir293/mauth) for details about the request payload.
 
 ## Requests
 ### Insert
