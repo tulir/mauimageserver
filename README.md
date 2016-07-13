@@ -5,6 +5,52 @@ mauImageServer is a simple image hosting and sharing backend designed to be used
 [mAuth](https://github.com/tulir293/mauth) is used for authentication.
 It also has a basic search function. An example search frontend can be found from [img.mau.lu/search.html](https://img.mau.lu/search.html).
 
+# Setup
+## Packaging & Install
+You can generate a debian package using `make package`. It will produce a deb package named `mauimageserver.deb`.
+
+You can use `sudo dpkg -i mauimageserver.deb` to install the package.
+
+## Configuration
+* `image-location` - The location to store uploaded images
+* `date-format` - The Go date format to display when using the image template
+* `require-auth` - Require authentication (mAuth) to upload images. Removing/Hiding/Replacing images always requires authentication
+* `trust-headers` - Trust the `X-Forwarded-For` header usually set by load balancers or using proxy pass in a web server
+* `allow-search` - Allow searching for images based on various factors
+* `sql` - MySQL/MariaDB settings
+  * `connection` - Connection details
+    * `mode` - The mode to connect using (Usually `tcp` or `unix`)
+    * `ip` - The IP or Unix socket path to connect to
+    * `port` - The port to connect to (when using TCP)
+  * `authentication` - Datbase authentication. Should be self-explanatory
+  * `database` - The name of the database to use. The database must exist, but tables will be created automatically
+
+Default configuration:
+```json
+{
+    "image-location": "/var/mis",
+    "date-format": "15:04:05 02.01.2006 MST",
+    "image-template": "/etc/mis/image.html",
+    "require-auth": true,
+    "trust-headers": false,
+    "allow-search": true,
+    "ip": "127.0.0.1",
+    "port": 29300,
+    "sql": {
+        "connection": {
+            "mode": "tcp",
+            "ip": "127.0.0.1",
+            "port": 3306
+        },
+        "authentication": {
+            "username": "root",
+            "password": "password"
+        },
+        "database": "mauimageserver"
+    }
+}
+```
+
 # API
 ## Authentication
 The login interface is located at `/auth/login` and register at `/auth/register`. See the documentation of [mAuth](https://github.com/tulir293/mauth) for details about the request payload.
