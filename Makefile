@@ -2,7 +2,7 @@ build:
 	go build -o mauimageserver
 
 package-prep: build
-	mv mauimageserver package/usr/bin/
+	cp mauimageserver package/usr/bin/
 	cp image.html package/etc/mis/
 	cp config.json package/etc/mis/
 

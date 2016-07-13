@@ -1,7 +1,7 @@
 {
     "image-location": "/var/mis",
     "date-format": "15:04:05 02.01.2006 MST",
-    "image-template": "/var/mis/image.html",
+    "image-template": "/etc/mis/image.html",
     "require-auth": true,
     "trust-headers": false,
     "allow-search": true,
