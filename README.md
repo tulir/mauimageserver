@@ -8,6 +8,7 @@ It also has a basic search function. An example search frontend can be found fro
 ## Setup
 ### Packaging & Install
 You can generate a debian package using `make package`. It will produce a deb package named `mauimageserver.deb`.
+You can also download a prebuilt package from [dl.maunium.net/programs/mauimageserver](https://dl.maunium.net/programs/mauimageserver/)
 
 You can use `sudo dpkg -i mauimageserver.deb` to install the package.
 
