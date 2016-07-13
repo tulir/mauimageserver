@@ -1,0 +1,8 @@
+[Unit]
+Description=A self-hosted server to store and easily share images.
+
+[Service]
+ExecStart=/usr/bin/mauimageserver
+
+[Install]
+WantedBy=multi-user.target
