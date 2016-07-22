@@ -5,4 +5,4 @@ Description=A self-hosted server to store and easily share images.
 ExecStart=/usr/bin/mauimageserver
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=network.target
